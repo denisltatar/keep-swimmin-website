@@ -36,3 +36,30 @@
     transform: rotate(360deg);
   }
 }
+
+body {
+  margin: 0;
+  font-family: 'Roboto', sans-serif;
+  color: #333;
+}
+
+header {
+  background: #007BFF;
+}
+
+main {
+  background: #fff;
+}
+
+footer {
+  background: #007BFF;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+.logo-text {
+  font-family: 'Lobster', cursive;
+}
