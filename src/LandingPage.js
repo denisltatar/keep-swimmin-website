@@ -11,14 +11,15 @@ import Preview1 from './assets/preview-1.png'
 import Preview2 from './assets/preview-2.png'
 import Preview3 from './assets/preview-3.png'
 import WhalesGroup from './assets/Group 28@3x.png'
+import appStoreBadge from './assets/app-store-badge.svg'; 
 
 const LandingPage = () => {
   return (
     <div className="min-h-screen bg-white text-gray-800 flex flex-col items-center">
       <header className="w-full py-10 bg-blue-500 text-white flex flex-col items-center">
         <img src={WhiteWhale} alt="Keep Swimmin' Logo" className="w-40 mb-7" />
-        <h1 className="logo-text text-5xl mb-7">Keep Swimmin'</h1>
-        <p className="text-lg mt-2">Stay motivated and Keep Swimmin'!</p>
+        <h1 className="logo-text text-5xl mb-4">Keep Swimmin'</h1>
+        <p className="text-lg mt-1">Stay motivated and Keep Swimmin'!</p>
       </header>
 
       <main className="w-full flex-grow flex flex-col items-center justify-center text-center px-4">
@@ -31,7 +32,7 @@ const LandingPage = () => {
           {/* <img src={Preview3} alt="App Screenshot" className="w-3/4 max-w-md rounded-lg shadow-lg mx-auto" /> */}
         </section>
 
-        <section className="w-full py-10 bg-white-100">
+        <section className="w-full  bg-white-100">
           <h2 className="text-3xl font-semibold mb-5">Features</h2>
           <div className="flex flex-wrap justify-center">
             <div className="w-64 mx-4 mb-8 flex flex-col items-center">
@@ -50,7 +51,14 @@ const LandingPage = () => {
               <p className="text-center">Join a community of like-minded individuals.</p>
             </div>
           </div>
+          
         </section>
+
+        {/* <h2 className="text-1xl font-semibold mb-2">Join us today...</h2> */}
+        <p className="mb-1">Join us today...</p>
+        <a href="https://apps.apple.com/app/your-app-id" target="_blank" rel="noopener noreferrer">
+          <img src={appStoreBadge} alt="Download on the App Store" style={{ width: '150px', height: '50px' }} className="mb-4" />
+        </a>
       </main>
 
       <footer className="w-full py-6 bg-blue-500 text-white text-center">
