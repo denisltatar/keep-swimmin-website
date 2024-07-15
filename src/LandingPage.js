@@ -25,7 +25,7 @@ const LandingPage = () => {
       <main className="w-full flex-grow flex flex-col items-center justify-center text-center px-4">
         <section className="w-full py-10" style={{ backgroundImage: `url(${Background})`, backgroundSize: 'cover' }}>
           <h2 className="text-3xl font-semibold mb-3">About the App</h2>
-          <p className="mb-5">Keep Swimmin' is a story oriented motivation app where users start off as a baby whale and grow by digesting krills (quotes).</p>
+          <p className="mb-5">Keep Swimmin' is a story oriented motivation app where users start off as a baby whale and grow by digesting krills (motivational quotes).</p>
           <img src={Screenshot} alt="App Screenshot" className="w-3/4 max-w-md rounded-lg shadow-lg mx-auto" />
           {/* <img src={Preview1} alt="App Screenshot" className="w-3/4 max-w-md rounded-lg shadow-lg mx-auto" /> */}
           {/* <img src={Preview2} alt="App Screenshot" className="w-3/4 max-w-md rounded-lg shadow-lg mx-auto" /> */}
