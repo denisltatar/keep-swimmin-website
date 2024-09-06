@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/keep-swimmin-website/static/css/main.51fb321e.css",
-    "main.js": "/keep-swimmin-website/static/js/main.8b99686e.js",
+    "main.css": "/keep-swimmin-website/static/css/main.c8370d23.css",
+    "main.js": "/keep-swimmin-website/static/js/main.35eb0318.js",
     "static/js/453.a688816a.chunk.js": "/keep-swimmin-website/static/js/453.a688816a.chunk.js",
     "static/media/Frame 4.png": "/keep-swimmin-website/static/media/Frame 4.0620aeb7072643a824d2.png",
     "static/media/preview-1.png": "/keep-swimmin-website/static/media/preview-1.2d5d6e415b4ce570377d.png",
@@ -13,12 +13,12 @@
     "static/media/Keep Swimmin Whale-01 2.png": "/keep-swimmin-website/static/media/Keep Swimmin Whale-01 2.ebd8721dc171c24a3ec7.png",
     "static/media/app-store-badge.svg": "/keep-swimmin-website/static/media/app-store-badge.8c4986ee4828b47d16f5cd694ef065f2.svg",
     "index.html": "/keep-swimmin-website/index.html",
-    "main.51fb321e.css.map": "/keep-swimmin-website/static/css/main.51fb321e.css.map",
-    "main.8b99686e.js.map": "/keep-swimmin-website/static/js/main.8b99686e.js.map",
+    "main.c8370d23.css.map": "/keep-swimmin-website/static/css/main.c8370d23.css.map",
+    "main.35eb0318.js.map": "/keep-swimmin-website/static/js/main.35eb0318.js.map",
     "453.a688816a.chunk.js.map": "/keep-swimmin-website/static/js/453.a688816a.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.51fb321e.css",
-    "static/js/main.8b99686e.js"
+    "static/css/main.c8370d23.css",
+    "static/js/main.35eb0318.js"
   ]
 }
