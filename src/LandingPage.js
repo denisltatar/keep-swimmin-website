@@ -1,5 +1,6 @@
 import React from 'react';
-import './App.css'; // Ensure you have a custom CSS file if needed
+import { Link } from 'react-router-dom';
+import './App.css';
 
 // Import images
 import Whale from './assets/Keep Swimmin Whale-01 2.png'
@@ -7,9 +8,6 @@ import WhiteWhale from './assets/white-whale.png'
 import Background from './assets/Group 17@3x.png'
 import Prawn from './assets/Prawn@3x.png'
 import Screenshot from './assets/Frame 4.png'
-import Preview1 from './assets/preview-1.png'
-import Preview2 from './assets/preview-2.png'
-import Preview3 from './assets/preview-3.png'
 import WhalesGroup from './assets/Group 28@3x.png'
 import appStoreBadge from './assets/app-store-badge.svg'; 
 
@@ -59,27 +57,35 @@ const LandingPage = () => {
           <img src={appStoreBadge} alt="Download on the App Store" style={{ width: '150px', height: '50px' }} className="mb-2" />
         </a>
 
-        {/* Privacy Policy Section */}
-        <section className="w-full max-w-2xl mx-auto text-left mt-6 bg-gray-50 p-8 rounded-lg shadow-lg mb-8">
-          <h2 className="text-3xl font-semibold mb-4 text-center">Privacy Policy</h2>
-          <p className="text-sm mb-4 text-gray-700">
-            At Keep Swimmin', we take your privacy seriously. We collect personal data such as email addresses solely for the
-            purpose of providing personalized motivational content. Your data will not be shared with third parties without
-            your explicit consent.
-          </p>
-          <p className="text-sm mb-4 text-gray-700">
-            We also collect anonymous usage data to improve the app experience. You can opt-out of data collection at any time
-            through the app settings. By using Keep Swimmin', you agree to our terms and conditions outlined in this privacy
-            policy.
-          </p>
-          <p className="text-sm text-gray-700">
-            For any concerns or questions regarding your data, please contact us at support@keepswimmin.com.
-          </p>
-        </section>
+        <p className="mb-10 mt-4 text-sm text-gray-600">
+          <Link
+            to="/privacy"
+            className="font-medium text-blue-600 underline decoration-blue-200 underline-offset-2 hover:text-blue-700"
+          >
+            Privacy Policy
+          </Link>
+          <span className="mx-2 text-gray-400">·</span>
+          <Link
+            to="/terms"
+            className="font-medium text-blue-600 underline decoration-blue-200 underline-offset-2 hover:text-blue-700"
+          >
+            Terms of Service
+          </Link>
+        </p>
       </main>
 
-      <footer className="w-full py-6 bg-blue-500 text-white text-center">
-        <p>&copy; 2024 Keep Swimmin'. All Rights Reserved.</p>
+      <footer className="w-full bg-blue-500 py-8 text-white">
+        <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 px-4 text-center sm:flex-row sm:justify-between sm:text-left">
+          <p className="text-sm">&copy; {new Date().getFullYear()} Keep Swimmin&apos;. All rights reserved.</p>
+          <nav className="flex flex-wrap justify-center gap-6 text-sm font-medium">
+            <Link to="/terms" className="text-white/95 underline-offset-2 hover:underline">
+              Terms of Service
+            </Link>
+            <Link to="/privacy" className="text-white/95 underline-offset-2 hover:underline">
+              Privacy Policy
+            </Link>
+          </nav>
+        </div>
       </footer>
     </div>
   );
