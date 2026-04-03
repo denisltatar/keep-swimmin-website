@@ -1,25 +1,31 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, FileText } from 'lucide-react';
-import LegalFooter from '../components/LegalFooter';
-import WhaleMark from '../assets/Keep Swimmin Whale-01 2.png';
+import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
+import { ArrowLeft, FileText } from "lucide-react";
+import { publicAsset } from "@/lib/base-path";
 
-const TermsOfService = () => {
+export const metadata: Metadata = {
+  title: "Terms of Service",
+  description: "Terms governing your use of the Keep Swimmin' app.",
+};
+
+export default function TermsPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-[#F2F6FA] font-inter text-slate-800 antialiased">
-      <header className="border-b border-slate-200/90 bg-white/60 backdrop-blur-sm">
-        <div className="mx-auto max-w-4xl px-6 py-5">
+    <>
+      <header className="border-b border-slate-200 bg-white/50 backdrop-blur-sm">
+        <div className="mx-auto max-w-4xl px-6 py-6">
           <Link
-            to="/"
-            className="inline-flex items-center gap-3 text-sm text-slate-500 transition-colors hover:text-slate-800"
+            href="/"
+            className="inline-flex items-center gap-3 text-sm text-slate-600 transition-colors hover:text-slate-800"
           >
             <ArrowLeft className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-            <img
-              src={WhaleMark}
+            <Image
+              src={publicAsset("/images/whale.png")}
               alt=""
               width={24}
               height={24}
               className="h-6 w-6 rounded-lg object-contain shadow-sm ring-1 ring-slate-200/80"
+              style={{ width: "auto", height: "auto" }}
             />
             <span className="font-semibold text-slate-700">Back to Keep Swimmin&apos;</span>
           </Link>
@@ -36,13 +42,13 @@ const TermsOfService = () => {
           <p className="text-sm text-slate-500">Last updated: April 1, 2026</p>
         </div>
 
-        <div className="rounded-[1.75rem] border border-slate-200/80 bg-white p-8 shadow-card md:p-10">
+        <div className="rounded-[1.75rem] border border-slate-200/80 bg-white p-8 shadow-[var(--shadow-card)] md:p-10">
           <div className="space-y-5 text-[15px] leading-relaxed text-slate-600 md:text-base">
             <p>
               These Terms of Service govern your use of the Keep Swimmin&apos; mobile application. By using the app, you
-              agree to these terms and our{' '}
+              agree to these terms and our{" "}
               <Link
-                to="/privacy"
+                href="/privacy"
                 className="font-semibold text-sky-600 underline decoration-sky-300/50 underline-offset-2 hover:text-sky-700"
               >
                 Privacy Policy
@@ -50,11 +56,11 @@ const TermsOfService = () => {
               .
             </p>
             <p>
-              We may update these terms from time to time. Continued use of the app after changes constitutes acceptance of
-              the revised terms.
+              We may update these terms from time to time. Continued use of the app after changes constitutes acceptance of the
+              revised terms.
             </p>
             <p>
-              For questions about these terms, contact us at{' '}
+              For questions about these terms, contact us at{" "}
               <a
                 href="mailto:support@keepswimmin.com"
                 className="font-semibold text-sky-600 underline decoration-sky-300/50 underline-offset-2 hover:text-sky-700"
@@ -66,10 +72,6 @@ const TermsOfService = () => {
           </div>
         </div>
       </main>
-
-      <LegalFooter />
-    </div>
+    </>
   );
-};
-
-export default TermsOfService;
+}
