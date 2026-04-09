@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Sparkles, Users, Quote } from "lucide-react";
+import { ArrowRight, Sparkles, Users, Quote, Wand2 } from "lucide-react";
 import { IPhoneMockup } from "@/components/iphone-mockup";
+import { HowItWorksVisualSection } from "@/components/marketing/how-it-works-visual";
+import { QuoteNotificationShowcaseSection } from "@/components/marketing/quote-notification-showcase";
 import { FaqSection } from "@/components/marketing/faq-section";
 import { publicAsset } from "@/lib/base-path";
 import { cn } from "@/lib/utils";
@@ -23,17 +25,17 @@ export default function HomePage() {
                 className="h-8 w-8 shrink-0 rounded-lg object-contain shadow-sm sm:h-9 sm:w-9"
                 priority
               />
-              <span className="text-sm font-medium text-slate-600">Motivation, reimagined</span>
+              <span className="text-sm font-medium text-slate-600">AI themes · quotes that feel yours</span>
             </div>
             <h1 className={cn("text-5xl font-semibold tracking-tight text-slate-800 md:text-6xl", "font-[family-name:var(--font-lobster)]")}>
               Keep Swimmin&apos;
             </h1>
             <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-700 md:text-3xl">
-              Stay motivated every day
+              Build your own theme with AI—then get quotes that match it
             </p>
             <p className="mt-6 max-w-lg text-lg leading-relaxed text-slate-600">
-              A story-oriented app where you start as a baby whale and grow by collecting krills—daily motivational quotes that
-              help you build momentum in real life.
+              Describe the vibe you want—calm mornings, grind mode, gentle recovery—and we shape a theme around you. Your daily
+              quotes arrive tuned to that world, so motivation never feels generic.
             </p>
             <div className="mt-8">
               <p className="text-sm font-medium text-slate-700">Get the app</p>
@@ -60,23 +62,32 @@ export default function HomePage() {
           </div>
         </section>
 
+        <HowItWorksVisualSection />
+
+        <QuoteNotificationShowcaseSection />
+
         {/* Features */}
         <section className="border-t border-slate-200/60 bg-white/30 py-16 md:py-20">
           <div className="mx-auto max-w-6xl px-6">
             <h2 className="text-center text-3xl font-semibold tracking-tight text-slate-800 md:text-4xl">What you get</h2>
             <p className="mx-auto mt-3 max-w-2xl text-center text-lg text-slate-600">
-              Simple loops that keep you coming back—without the noise.
+              AI-crafted themes and quotes that sound like they were written for you—not a random feed.
             </p>
             <div className="mt-12 grid gap-6 md:grid-cols-2">
               <FeatureCard
+                icon={<Wand2 className="h-6 w-6 text-sky-500" />}
+                title="Your theme, your AI"
+                description="Create a custom theme in your own words. We translate that into a steady stream of quotes that fit your headspace."
+              />
+              <FeatureCard
                 icon={<Quote className="h-6 w-6 text-sky-500" />}
-                title="Daily quotes"
-                description="Fresh motivational lines across themes you care about—quick to read, easy to digest."
+                title="Quotes that match"
+                description="No one-size-fits-all platitudes—notifications and daily lines aligned to the theme you defined."
               />
               <FeatureCard
                 icon={<Sparkles className="h-6 w-6 text-sky-500" />}
                 title="Progress & growth"
-                description="Watch your whale grow as you stay consistent. Small wins, visible progress."
+                description="Grow your whale as you stay consistent—small wins stack into a story you can see."
               />
               <FeatureCard
                 icon={<Users className="h-6 w-6 text-sky-500" />}

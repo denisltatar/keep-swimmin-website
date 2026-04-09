@@ -16,7 +16,8 @@ const lobster = Lobster({
 export const metadata: Metadata = {
   metadataBase: new URL("https://denisltatar.github.io/keep-swimmin-website"),
   title: "Keep Swimmin'",
-  description: "Stay motivated and Keep Swimmin'! A story-oriented motivation app.",
+  description:
+    "Create your own motivation theme with AI and get daily quotes that match it. Stay motivated and Keep Swimmin'!",
   icons: {
     icon: publicAsset("/images/whales-group.png"),
     apple: publicAsset("/images/whales-group.png"),

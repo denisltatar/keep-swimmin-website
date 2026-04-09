@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 const items = [
   {
     q: "What is Keep Swimmin'?",
-    a: "A story-oriented motivation app: start as a baby whale and grow by collecting daily quotes and building habits.",
+    a: "A motivation app where you grow a whale as you stay consistent—and the big twist is AI-built themes: you describe the vibe you want, and daily quotes are tailored to match. Think notifications that actually sound like your coach, not a random quote bot.",
   },
   {
     q: "Is the app free?",
