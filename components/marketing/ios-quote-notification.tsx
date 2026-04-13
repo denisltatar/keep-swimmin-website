@@ -105,18 +105,28 @@ const CYCLE_MS = 8200;
 
 const popInTransition = { type: "spring" as const, damping: 15, stiffness: 410, mass: 0.62 };
 
+const softInTransition = { type: "spring" as const, damping: 32, stiffness: 260, mass: 0.85 };
+
 const exitEase = [0.32, 0, 0.72, 0] as const;
+
+const softExitEase = [0.4, 0, 0.2, 1] as const;
 
 type CarouselProps = {
   /** When false, shows the first sample without cycling (e.g. before “build” finishes). */
   enabled?: boolean;
   className?: string;
+  /** After a loading placeholder: settle in like a new notification instead of flying from far above. */
+  gentleEntrance?: boolean;
 };
 
 /**
  * Cycling lock-screen-style notifications for marketing embeds.
  */
-export function MarketingQuoteNotificationCarousel({ enabled = true, className }: CarouselProps) {
+export function MarketingQuoteNotificationCarousel({
+  enabled = true,
+  className,
+  gentleEntrance = false,
+}: CarouselProps) {
   const reduce = useReducedMotion();
   const shouldCycle = !reduce && enabled;
   const [activeIndex, setActiveIndex] = useState(0);
@@ -136,6 +146,7 @@ export function MarketingQuoteNotificationCarousel({ enabled = true, className }
   const active = MARKETING_QUOTE_NOTIFICATION_SAMPLES[activeIndex] ?? MARKETING_QUOTE_NOTIFICATION_SAMPLES[0];
 
   const drift = activeIndex % 2 === 0 ? 1 : -1;
+  const soft = gentleEntrance && !reduce;
 
   return (
     <MotionConfig reducedMotion={reduce ? "always" : "user"}>
@@ -154,30 +165,55 @@ export function MarketingQuoteNotificationCarousel({ enabled = true, className }
             <AnimatePresence mode="wait">
               <motion.div
                 key={active.id}
-                initial={{
-                  opacity: 0,
-                  y: -110,
-                  scale: 0.78,
-                  rotateX: -22,
-                  x: 22 * drift,
-                }}
+                initial={
+                  soft
+                    ? {
+                        opacity: 0,
+                        y: 10,
+                        scale: 0.99,
+                        rotateX: -6,
+                        x: 6 * drift,
+                      }
+                    : {
+                        opacity: 0,
+                        y: -110,
+                        scale: 0.78,
+                        rotateX: -22,
+                        x: 22 * drift,
+                      }
+                }
                 animate={{
                   opacity: 1,
                   y: 0,
                   scale: 1,
                   rotateX: 0,
                   x: 0,
-                  transition: popInTransition,
+                  transition: soft ? softInTransition : popInTransition,
                 }}
-                exit={{
-                  opacity: 0,
-                  y: -100,
-                  scale: 1.12,
-                  rotateX: 14,
-                  x: 28 * drift,
-                  transition: { duration: 0.5, ease: exitEase },
-                }}
-                whileHover={{ y: -4, scale: 1.02, transition: { type: "spring", stiffness: 400, damping: 24 } }}
+                exit={
+                  soft
+                    ? {
+                        opacity: 0,
+                        y: -6,
+                        scale: 1.005,
+                        rotateX: 4,
+                        x: 6 * drift,
+                        transition: { duration: 0.42, ease: softExitEase },
+                      }
+                    : {
+                        opacity: 0,
+                        y: -100,
+                        scale: 1.12,
+                        rotateX: 14,
+                        x: 28 * drift,
+                        transition: { duration: 0.5, ease: exitEase },
+                      }
+                }
+                whileHover={
+                  soft
+                    ? { y: -2, scale: 1.008, transition: { type: "spring", stiffness: 320, damping: 28 } }
+                    : { y: -4, scale: 1.02, transition: { type: "spring", stiffness: 400, damping: 24 } }
+                }
                 className="relative origin-top will-change-transform [transform-style:preserve-3d]"
               >
                 <IOSQuoteNotificationCard body={active.body} time={active.time} className="relative" />

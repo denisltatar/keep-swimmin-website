@@ -1,21 +1,26 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motion, MotionConfig, useReducedMotion } from "framer-motion";
-import {
-  IOSQuoteNotificationCard,
-  MarketingQuoteNotificationCarousel,
-} from "@/components/marketing/ios-quote-notification";
+import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "framer-motion";
+import { MarketingQuoteNotificationCarousel } from "@/components/marketing/ios-quote-notification";
 import { MARKETING_DEMO_THEME_DESCRIPTION, MARKETING_DEMO_THEME_NAME } from "@/lib/marketing-demo-copy";
 import { cn } from "@/lib/utils";
 
 const DEMO_TITLE = MARKETING_DEMO_THEME_NAME;
 const DEMO_DESCRIPTION = MARKETING_DEMO_THEME_DESCRIPTION;
 
-const TITLE_MS = 78;
-const PAUSE_AFTER_TITLE_MS = 520;
-const DESC_MS = 28;
-const PAUSE_BEFORE_GENERATE_MS = 650;
+const TITLE_MS = 72;
+const PAUSE_AFTER_TITLE_MS = 560;
+const DESC_MS = 26;
+const PAUSE_BEFORE_GENERATE_MS = 720;
+
+/** Scroll / layout springs for this section — softer than default marketing springs */
+const sectionReveal = { type: "spring" as const, damping: 34, stiffness: 190, mass: 0.9 };
+
+const panelCrossfade = {
+  duration: 0.5,
+  ease: [0.22, 1, 0.36, 1] as const,
+};
 const GENERATING_MS = 1400;
 const SUCCESS_MS = 3200;
 const LOOP_GAP_MS = 2000;
@@ -120,22 +125,20 @@ function StepRow({
   return (
     <li className="relative flex gap-4 pb-8 last:pb-0 md:gap-5 md:pb-10">
       <div className="flex flex-col items-center">
-        <motion.div
+        <div
           className={cn(
-            "relative z-[1] flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xs font-bold shadow-md md:h-11 md:w-11 md:text-sm",
+            "relative z-[1] flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xs font-bold shadow-md transition-[color,box-shadow,background,transform,border-color] duration-500 ease-out md:h-11 md:w-11 md:text-sm",
             active
               ? "bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-sky-500/35 ring-2 ring-white"
               : "border border-sky-100/90 bg-white/90 text-slate-400 shadow-sm",
           )}
-          animate={active ? { scale: [1, 1.04, 1] } : undefined}
-          transition={{ duration: 1.6, repeat: active ? Infinity : 0, ease: "easeInOut" }}
         >
           {n}
-        </motion.div>
+        </div>
         {!isLast && (
           <div
             className={cn(
-              "mt-2 h-8 w-0.5 rounded-full md:h-10",
+              "mt-2 h-8 w-0.5 rounded-full transition-colors duration-500 ease-out md:h-10",
               active ? "bg-gradient-to-b from-sky-400 to-sky-100/80" : "bg-sky-100/90",
             )}
             aria-hidden
@@ -143,10 +146,17 @@ function StepRow({
         )}
       </div>
       <div className="min-w-0 pt-1 md:pt-1.5">
-        <p className={cn("text-[15px] font-semibold leading-snug md:text-base", active ? "text-slate-900" : "text-slate-600")}>
+        <p
+          className={cn(
+            "text-[15px] font-semibold leading-snug transition-colors duration-500 ease-out md:text-base",
+            active ? "text-slate-900" : "text-slate-600",
+          )}
+        >
           {title}
         </p>
-        <p className="mt-1 text-sm leading-relaxed text-slate-500">{description}</p>
+        <p className="mt-1 text-sm leading-relaxed text-slate-500 transition-colors duration-500 ease-out">
+          {description}
+        </p>
       </div>
     </li>
   );
@@ -159,10 +169,12 @@ function FlowBeam({ active }: { active: boolean }) {
       <div className="absolute inset-y-0 w-1 rounded-full bg-gradient-to-b from-sky-200/50 via-sky-300/40 to-blue-100/60" />
       {!reduce && (
         <motion.div
-          className="absolute h-2.5 w-2.5 rounded-full bg-sky-400 shadow-[0_0_16px_rgba(56,189,248,0.65)]"
-          animate={active ? { y: ["-120%", "120%"], opacity: [0.45, 1, 0.45] } : { y: 0, opacity: 0.3 }}
+          className="absolute top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-sky-400 shadow-[0_0_12px_rgba(56,189,248,0.5)]"
+          animate={active ? { opacity: [0.5, 1, 0.5] } : { opacity: 0.32 }}
           transition={
-            active ? { duration: 1.65, repeat: Infinity, ease: "easeInOut" } : { duration: 0.3 }
+            active
+              ? { duration: 2.2, repeat: Infinity, ease: "easeInOut" }
+              : { duration: 0.55, ease: [0.22, 1, 0.36, 1] }
           }
         />
       )}
@@ -170,17 +182,45 @@ function FlowBeam({ active }: { active: boolean }) {
   );
 }
 
+function QuotesPreviewLoadingSkeleton({ phase }: { phase: "waiting" | "writing" }) {
+  return (
+    <div className="space-y-2.5">
+      <div className="flex gap-3 rounded-2xl border border-sky-100/90 bg-gradient-to-br from-white to-sky-50/50 px-4 py-3.5 shadow-sm ring-1 ring-sky-100/40">
+        <div className="h-11 w-11 shrink-0 animate-pulse rounded-xl bg-sky-100 [animation-duration:1.6s]" />
+        <div className="min-w-0 flex-1 space-y-2 pt-1">
+          <div className="h-2 w-14 animate-pulse rounded-full bg-sky-200/80 [animation-duration:1.6s]" />
+          <div className="h-2 w-full animate-pulse rounded-full bg-sky-100 [animation-duration:1.6s]" />
+          <div className="h-2 w-[85%] animate-pulse rounded-full bg-sky-100 [animation-duration:1.6s]" />
+        </div>
+      </div>
+      <AnimatePresence mode="wait">
+        <motion.p
+          key={phase}
+          className="text-center text-xs font-medium text-sky-600/80 md:text-left"
+          initial={{ opacity: 0, y: 3 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -2 }}
+          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {phase === "writing" ? "Writing lines…" : "Waiting for your theme…"}
+        </motion.p>
+      </AnimatePresence>
+    </div>
+  );
+}
+
 function NotificationPreviewPanel({
-  descComplete,
   showGenerating,
   showSuccess,
+  reduce,
 }: {
-  descComplete: boolean;
   showGenerating: boolean;
   showSuccess: boolean;
+  reduce: boolean;
 }) {
-  const reduce = useReducedMotion();
   const quotesEnabled = showSuccess || Boolean(reduce);
+  const quotesPanelKey = showSuccess ? "quotes" : "loading";
+  const loadingPhase = showGenerating ? "writing" : "waiting";
 
   return (
     <div className="relative mx-auto w-full max-w-[22rem]">
@@ -188,40 +228,26 @@ function NotificationPreviewPanel({
         Your quotes
       </p>
 
-      {!descComplete && (
-        <p className="py-10 text-center text-sm text-slate-600 md:py-12 md:text-left">
-          Matched lines for{" "}
-          <span className="font-semibold text-slate-800">{MARKETING_DEMO_THEME_NAME}</span> appear here.
-        </p>
-      )}
-
-      {descComplete && showGenerating && (
-        <div className="space-y-2.5">
-          <div className="flex gap-3 rounded-2xl border border-sky-100/90 bg-gradient-to-br from-white to-sky-50/50 px-4 py-3.5 shadow-sm ring-1 ring-sky-100/40">
-            <div className="h-11 w-11 shrink-0 animate-pulse rounded-xl bg-sky-100" />
-            <div className="min-w-0 flex-1 space-y-2 pt-1">
-              <div className="h-2 w-14 animate-pulse rounded-full bg-sky-200/80" />
-              <div className="h-2 w-full animate-pulse rounded-full bg-sky-100" />
-              <div className="h-2 w-[85%] animate-pulse rounded-full bg-sky-100" />
-            </div>
-          </div>
-          <p className="text-center text-xs font-medium text-sky-600/80 md:text-left">Writing lines…</p>
-        </div>
-      )}
-
-      {descComplete && !showGenerating && !showSuccess && (
-        <IOSQuoteNotificationCard
-          body="After you save, new quotes cycle in like this."
-          time="soon"
-          className="relative opacity-[0.92]"
-        />
-      )}
-
-      {descComplete && showSuccess && (
-        <div className="overflow-visible pt-1">
-          <MarketingQuoteNotificationCarousel enabled={quotesEnabled} />
-        </div>
-      )}
+      {/* Fixed height so the How it works block doesn’t jump when demo phases change */}
+      <div className="relative min-h-[240px] md:min-h-[260px]">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={quotesPanelKey}
+            className={cn(quotesPanelKey === "quotes" && "overflow-visible pt-1")}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={panelCrossfade}
+          >
+            {quotesPanelKey === "loading" && (
+              <QuotesPreviewLoadingSkeleton phase={loadingPhase} />
+            )}
+            {quotesPanelKey === "quotes" && (
+              <MarketingQuoteNotificationCarousel enabled={quotesEnabled} gentleEntrance />
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
@@ -268,10 +294,7 @@ export function HowItWorksVisualSection({ className }: { className?: string }) {
   return (
     <MotionConfig reducedMotion={reduce ? "always" : "user"}>
       <section
-        className={cn(
-          "relative overflow-hidden border-t border-sky-100/80 bg-gradient-to-b from-sky-50/90 via-white to-blue-50/35 py-16 md:py-24",
-          className,
-        )}
+        className={cn("relative overflow-hidden bg-transparent pt-16 pb-14 md:pt-24 md:pb-20", className)}
         aria-labelledby="how-it-works-heading"
       >
         {!reduce && (
@@ -279,18 +302,14 @@ export function HowItWorksVisualSection({ className }: { className?: string }) {
             <motion.div
               className="pointer-events-none absolute -left-28 top-1/4 h-72 w-72 rounded-full bg-sky-400/25 blur-3xl"
               aria-hidden
-              animate={{ x: [0, 20, 0], y: [0, 14, 0] }}
-              transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+              animate={{ x: [0, 16, 0], y: [0, 10, 0] }}
+              transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
             />
             <motion.div
               className="pointer-events-none absolute -right-24 bottom-1/3 h-64 w-64 rounded-full bg-blue-400/20 blur-3xl"
               aria-hidden
-              animate={{ x: [0, -16, 0], y: [0, -12, 0] }}
-              transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-            />
-            <div
-              className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-200/70 to-transparent"
-              aria-hidden
+              animate={{ x: [0, -12, 0], y: [0, -9, 0] }}
+              transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
             />
           </>
         )}
@@ -298,10 +317,10 @@ export function HowItWorksVisualSection({ className }: { className?: string }) {
         <div className="relative mx-auto max-w-6xl px-6">
           <motion.div
             className="mx-auto max-w-3xl text-center"
-            initial={reduce ? false : { opacity: 0, y: 18 }}
+            initial={reduce ? false : { opacity: 0, y: 14 }}
             whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-50px" }}
-            transition={{ type: "spring", damping: 24, stiffness: 280 }}
+            transition={sectionReveal}
           >
             <p className="text-sm font-semibold uppercase tracking-wider text-sky-600">How it works</p>
             <h2
@@ -315,7 +334,13 @@ export function HowItWorksVisualSection({ className }: { className?: string }) {
             </p>
           </motion.div>
 
-          <div className="mt-14 grid gap-12 lg:mt-16 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)] lg:gap-16 xl:grid-cols-[minmax(0,300px)_minmax(0,1fr)]">
+          <motion.div
+            className="mt-14 grid gap-12 lg:mt-16 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)] lg:gap-16 xl:grid-cols-[minmax(0,300px)_minmax(0,1fr)]"
+            initial={reduce ? false : { opacity: 0, y: 20 }}
+            whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-40px" }}
+            transition={{ ...sectionReveal, delay: 0.06 }}
+          >
             <nav aria-label="Steps in the app" className="lg:max-w-sm">
               <ol className="relative">
                 {stepsMeta.map((s, i) => (
@@ -331,14 +356,14 @@ export function HowItWorksVisualSection({ className }: { className?: string }) {
               </ol>
             </nav>
 
-            <div className="min-w-0 lg:sticky lg:top-24 lg:self-start">
+            <div className="min-w-0 lg:self-start">
               <div className="rounded-[1.75rem] border border-sky-100/80 bg-white/70 p-1 shadow-[0_20px_50px_-24px_rgba(14,116,144,0.18)] ring-1 ring-white/80 backdrop-blur-md md:p-1.5">
                 <motion.div
                   className="relative overflow-hidden rounded-[1.35rem] border border-sky-100/60 bg-white p-5 md:p-6"
-                  initial={reduce ? false : { opacity: 0, y: 16 }}
+                  initial={reduce ? false : { opacity: 0, y: 12 }}
                   whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-40px" }}
-                  transition={{ type: "spring", damping: 24, stiffness: 280 }}
+                  transition={sectionReveal}
                 >
                   <div
                     className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white via-sky-50/20 to-blue-50/25"
@@ -363,7 +388,7 @@ export function HowItWorksVisualSection({ className }: { className?: string }) {
                         <div
                           id="howitworks-theme-title"
                           className={cn(
-                            "mt-1.5 min-h-[46px] rounded-xl border border-slate-200/90 bg-white px-3.5 py-2.5 text-lg font-semibold tracking-tight text-slate-900 shadow-inner shadow-sky-950/5",
+                            "mt-1.5 min-h-[46px] rounded-xl border border-slate-200/90 bg-white px-3.5 py-2.5 text-lg font-semibold tracking-tight text-slate-900 shadow-inner shadow-sky-950/5 transition-[border-color,box-shadow] duration-500 ease-out",
                             titleComplete && "border-sky-200/90 ring-1 ring-sky-100/80",
                           )}
                           aria-live="polite"
@@ -383,7 +408,7 @@ export function HowItWorksVisualSection({ className }: { className?: string }) {
                         <div
                           id="howitworks-theme-desc"
                           className={cn(
-                            "mt-1.5 min-h-[128px] rounded-xl border border-slate-200/90 bg-white px-3.5 py-2.5 text-[13px] leading-relaxed text-slate-700 shadow-inner shadow-sky-950/5 md:min-h-[118px]",
+                            "mt-1.5 min-h-[128px] rounded-xl border border-slate-200/90 bg-white px-3.5 py-2.5 text-[13px] leading-relaxed text-slate-700 shadow-inner shadow-sky-950/5 transition-[border-color,box-shadow,opacity] duration-500 ease-out md:min-h-[118px]",
                             descComplete && phase === "idle" && "border-sky-200/90 ring-1 ring-sky-100/80",
                             !titleComplete && "opacity-40",
                           )}
@@ -397,49 +422,27 @@ export function HowItWorksVisualSection({ className }: { className?: string }) {
                       </div>
 
                       <div className="pt-0.5">
-                        <motion.div
+                        <div
                           className={cn(
-                            "flex h-11 w-full items-center justify-center rounded-xl text-sm font-semibold transition-colors shadow-md",
+                            "flex h-11 w-full items-center justify-center rounded-xl text-sm font-semibold shadow-md transition-[color,background,box-shadow] duration-500 ease-out",
                             formReady || showGenerating || showSuccess
                               ? "bg-gradient-to-r from-slate-800 to-slate-900 text-white shadow-slate-900/20"
                               : "bg-slate-100 text-slate-400 shadow-none",
                           )}
-                        animate={
-                          reduce
-                            ? undefined
-                            : showGenerating
-                              ? { scale: [1, 1.02, 1] }
-                              : showSuccess
-                                ? { scale: [1, 1.03, 1] }
-                                : formReady
-                                  ? { scale: [1, 1.008, 1] }
-                                  : undefined
-                        }
-                        transition={
-                          reduce
-                            ? undefined
-                            : showGenerating
-                              ? { duration: 1.1, repeat: Infinity, ease: "easeInOut" }
-                              : showSuccess
-                                ? { duration: 0.45, ease: "easeOut" }
-                                : formReady
-                                  ? { duration: 2.4, repeat: Infinity, ease: "easeInOut" }
-                                  : undefined
-                        }
-                      >
-                        {showGenerating && (
-                          <span className="flex items-center gap-2">
-                            <span className="relative flex h-2 w-2">
-                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-300/70" />
-                              <span className="relative inline-flex h-2 w-2 rounded-full bg-sky-200" />
+                        >
+                          {showGenerating && (
+                            <span className="flex items-center gap-2">
+                              <span className="relative flex h-2 w-2">
+                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-300/70" />
+                                <span className="relative inline-flex h-2 w-2 rounded-full bg-sky-200" />
+                              </span>
+                              Building…
                             </span>
-                            Building…
-                          </span>
-                        )}
-                        {showSuccess && <span>Saved</span>}
-                        {!showGenerating && !showSuccess && <span>Get quotes</span>}
-                      </motion.div>
-                    </div>
+                          )}
+                          {showSuccess && <span>Saved</span>}
+                          {!showGenerating && !showSuccess && <span>Get quotes</span>}
+                        </div>
+                      </div>
                   </div>
                   </div>
                 </motion.div>
@@ -448,12 +451,12 @@ export function HowItWorksVisualSection({ className }: { className?: string }) {
               <FlowBeam active={beamActive} />
 
               <NotificationPreviewPanel
-                descComplete={descComplete}
                 showGenerating={showGenerating}
                 showSuccess={showSuccess}
+                reduce={Boolean(reduce)}
               />
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
     </MotionConfig>

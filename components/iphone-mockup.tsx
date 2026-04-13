@@ -32,13 +32,12 @@ export function IPhoneMockup({ className }: Props) {
           "rounded-[2.5rem] border border-slate-800 bg-slate-900 p-2 shadow-2xl",
         )}
       >
-        <div className="absolute left-1/2 top-2 z-10 h-5 w-24 -translate-x-1/2 rounded-full bg-black/80" aria-hidden />
         <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-b from-slate-50 to-sky-50">
           <Image
-            src={publicAsset("/images/screenshot.png")}
+            src={publicAsset("/images/landing-2.PNG")}
             alt="Keep Swimmin app preview"
-            width={540}
-            height={1140}
+            width={1170}
+            height={2532}
             className="h-auto w-full object-cover object-top"
             sizes="(max-width: 768px) 260px, 280px"
             priority

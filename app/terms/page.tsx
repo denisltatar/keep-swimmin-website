@@ -6,7 +6,7 @@ import { publicAsset } from "@/lib/base-path";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
-  description: "Terms governing your use of the Keep Swimmin' app.",
+  description: "Terms governing your use of the Keep Swimmin' app from Thoughtful Code.",
 };
 
 export default function TermsPage() {
@@ -22,10 +22,9 @@ export default function TermsPage() {
             <Image
               src={publicAsset("/images/whale.png")}
               alt=""
-              width={24}
-              height={24}
-              className="h-6 w-6 rounded-lg object-contain shadow-sm ring-1 ring-slate-200/80"
-              style={{ width: "auto", height: "auto" }}
+              width={32}
+              height={32}
+              className="h-8 w-8 shrink-0 rounded-md object-contain"
             />
             <span className="font-semibold text-slate-700">Back to Keep Swimmin&apos;</span>
           </Link>
@@ -45,8 +44,9 @@ export default function TermsPage() {
         <div className="rounded-[1.75rem] border border-slate-200/80 bg-white p-8 shadow-[var(--shadow-card)] md:p-10">
           <div className="space-y-5 text-[15px] leading-relaxed text-slate-600 md:text-base">
             <p>
-              These Terms of Service govern your use of the Keep Swimmin&apos; mobile application. By using the app, you
-              agree to these terms and our{" "}
+              These Terms of Service govern your use of the Keep Swimmin&apos; mobile application (the &quot;App&quot;),
+              provided by Thoughtful Code (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;). By using the App, you agree to
+              these terms and our{" "}
               <Link
                 href="/privacy"
                 className="font-semibold text-sky-600 underline decoration-sky-300/50 underline-offset-2 hover:text-sky-700"
@@ -56,16 +56,16 @@ export default function TermsPage() {
               .
             </p>
             <p>
-              We may update these terms from time to time. Continued use of the app after changes constitutes acceptance of the
+              We may update these terms from time to time. Continued use of the App after changes constitutes acceptance of the
               revised terms.
             </p>
             <p>
               For questions about these terms, contact us at{" "}
               <a
-                href="mailto:support@keepswimmin.com"
+                href="mailto:developer@thoughtfulcode.io"
                 className="font-semibold text-sky-600 underline decoration-sky-300/50 underline-offset-2 hover:text-sky-700"
               >
-                support@keepswimmin.com
+                developer@thoughtfulcode.io
               </a>
               .
             </p>

@@ -1,10 +1,9 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import { ArrowRight, Sparkles, Users, Quote, Wand2 } from "lucide-react";
+import { Sparkles, Users, Quote, Wand2 } from "lucide-react";
 import { IPhoneMockup } from "@/components/iphone-mockup";
 import { HowItWorksVisualSection } from "@/components/marketing/how-it-works-visual";
-import { QuoteNotificationShowcaseSection } from "@/components/marketing/quote-notification-showcase";
+import { NotificationCadenceSection } from "@/components/marketing/notification-cadence-section";
 import { FaqSection } from "@/components/marketing/faq-section";
 import { publicAsset } from "@/lib/base-path";
 import { cn } from "@/lib/utils";
@@ -16,26 +15,15 @@ export default function HomePage() {
         {/* Hero */}
         <section className="mx-auto grid max-w-6xl items-center gap-10 px-6 py-14 md:grid-cols-2 md:gap-12 md:py-20">
           <div>
-            <div className="mb-6 inline-flex items-center gap-3 rounded-2xl bg-white/60 p-2 pr-4 shadow-sm ring-1 ring-slate-200/80">
-              <Image
-                src={publicAsset("/images/white-whale.png")}
-                alt="Keep Swimmin'"
-                width={64}
-                height={64}
-                className="h-8 w-8 shrink-0 rounded-lg object-contain shadow-sm sm:h-9 sm:w-9"
-                priority
-              />
-              <span className="text-sm font-medium text-slate-600">AI themes · quotes that feel yours</span>
-            </div>
             <h1 className={cn("text-5xl font-semibold tracking-tight text-slate-800 md:text-6xl", "font-[family-name:var(--font-lobster)]")}>
               Keep Swimmin&apos;
             </h1>
             <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-700 md:text-3xl">
-              Build your own theme with AI—then get quotes that match it
+              Build your own custom AI quotes that fit your mood.
             </p>
             <p className="mt-6 max-w-lg text-lg leading-relaxed text-slate-600">
               Describe the vibe you want—calm mornings, grind mode, gentle recovery—and we shape a theme around you. Your daily
-              quotes arrive tuned to that world, so motivation never feels generic.
+              quotes arrive tuned to that world.
             </p>
             <div className="mt-8">
               <p className="text-sm font-medium text-slate-700">Get the app</p>
@@ -54,7 +42,6 @@ export default function HomePage() {
                   style={{ width: "auto", height: "auto" }}
                 />
               </a>
-              <p className="mt-3 text-sm text-slate-500">Available on iOS. Links to the App Store.</p>
             </div>
           </div>
           <div className="flex justify-center md:justify-end">
@@ -64,10 +51,10 @@ export default function HomePage() {
 
         <HowItWorksVisualSection />
 
-        <QuoteNotificationShowcaseSection />
+        <NotificationCadenceSection />
 
         {/* Features */}
-        <section className="border-t border-slate-200/60 bg-white/30 py-16 md:py-20">
+        <section className="bg-transparent py-16 md:py-20">
           <div className="mx-auto max-w-6xl px-6">
             <h2 className="text-center text-3xl font-semibold tracking-tight text-slate-800 md:text-4xl">What you get</h2>
             <p className="mx-auto mt-3 max-w-2xl text-center text-lg text-slate-600">
@@ -112,7 +99,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* CTA band */}
+        {/* CTA band — “Start your streak” (commented out)
         <section className="px-6 py-16 md:py-20">
           <div className="mx-auto max-w-5xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
             <div className="bg-gradient-to-r from-sky-100 via-blue-50 to-sky-50 px-8 py-12 md:px-12 md:py-14">
@@ -150,8 +137,9 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+        */}
 
-        {/* Story / journey */}
+        {/* Story / journey — “Your journey” (commented out)
         <section className="border-t border-slate-200/60 bg-white/20 px-6 py-16 md:py-24">
           <div className="mx-auto max-w-6xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-sky-400 to-blue-500 px-4 py-2 text-sm font-medium text-white shadow-md shadow-sky-500/20">
@@ -171,44 +159,9 @@ export default function HomePage() {
                 <Step n={3} emoji="🚀" title="Level up" text="Stay consistent and watch growth stack." />
               </div>
             </div>
-            <div className="mx-auto mt-14 max-w-xl rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-6 text-left text-slate-700 shadow-sm md:p-8">
-              <p className="font-semibold text-emerald-900">Built for momentum</p>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                Tiny actions beat perfect plans. Keep Swimmin&apos; is designed around that truth—gentle nudges, not pressure.
-              </p>
-            </div>
           </div>
         </section>
-
-        {/* Visual strip */}
-        <section className="px-6 py-12">
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-12 md:gap-16">
-            <Image
-              src={publicAsset("/images/prawn.png")}
-              alt=""
-              width={64}
-              height={64}
-              className="h-16 w-16 object-contain"
-              style={{ width: "auto", height: "auto" }}
-            />
-            <Image
-              src={publicAsset("/images/whale.png")}
-              alt=""
-              width={96}
-              height={96}
-              className="h-24 w-24 object-contain"
-              style={{ width: "auto", height: "auto" }}
-            />
-            <Image
-              src={publicAsset("/images/whales-group.png")}
-              alt=""
-              width={64}
-              height={64}
-              className="h-16 w-16 object-contain"
-              style={{ width: "auto", height: "auto" }}
-            />
-          </div>
-        </section>
+        */}
 
         <FaqSection />
       </main>

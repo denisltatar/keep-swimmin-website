@@ -16,7 +16,7 @@ const items = [
   },
   {
     q: "How do I get support?",
-    a: "Email us at support@keepswimmin.com and we will get back to you as soon as we can.",
+    a: "Email us at developer@thoughtfulcode.io and we will get back to you as soon as we can.",
   },
 ];
 

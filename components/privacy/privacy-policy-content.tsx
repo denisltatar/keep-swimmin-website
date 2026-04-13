@@ -59,7 +59,10 @@ export function PrivacyPolicyContent() {
         <SectionTitle icon={Eye}>Information we collect</SectionTitle>
         <div className="grid gap-6 md:grid-cols-2 md:gap-8">
           <div className="space-y-5">
-            <CollectItem title="Account information" description="Such as email (if applicable)." />
+            <CollectItem
+              title="Account information"
+              description="Such as your email address when applicable (for example, if you sign in with email), and your name or first name when you choose to provide it—so we can make generated quotes feel more personal to you."
+            />
             <CollectItem title="Usage data" description="Interactions within the app, session activity, and feature usage." />
           </div>
           <div className="space-y-5">
@@ -83,11 +86,11 @@ export function PrivacyPolicyContent() {
       <Card>
         <SectionTitle icon={Settings}>How we use your information</SectionTitle>
         <div className="space-y-4">
-          <UseLine text="To provide and improve the app experience" dotClass="bg-emerald-500" />
-          <UseLine text="To generate personalized responses and summaries" dotClass="bg-emerald-500" />
-          <UseLine text="To analyze usage patterns and improve features" dotClass="bg-emerald-500" />
+          <UseLine text="To provide and improve the app experience" dotClass="bg-sky-400" />
+          <UseLine text="To generate personalized quotes" dotClass="bg-sky-400" />
+          <UseLine text="To analyze usage patterns and improve features" dotClass="bg-sky-400" />
           <UseLine text="To manage subscriptions and payments" dotClass="bg-sky-400" />
-          <UseLine text="To ensure app security and prevent abuse" dotClass="bg-blue-600" />
+          <UseLine text="To ensure app security and prevent abuse" dotClass="bg-sky-400" />
         </div>
       </Card>
 
@@ -136,7 +139,7 @@ export function PrivacyPolicyContent() {
         <Card className="p-8 md:p-9">
           <h3 className="mb-3 text-lg font-bold text-slate-800">Children&apos;s privacy</h3>
           <p className="text-sm leading-relaxed text-slate-600">
-            Keep Swimmin&apos; is not intended for children under 13, and we do not knowingly collect data from children.
+            The App is not intended for children under 13, and we do not knowingly collect data from children.
           </p>
         </Card>
         <Card className="p-8 md:p-9">
@@ -154,10 +157,10 @@ export function PrivacyPolicyContent() {
         <p className="text-lg">
           <span className="font-semibold text-slate-800">Email: </span>
           <a
-            href="mailto:support@keepswimmin.com"
+            href="mailto:developer@thoughtfulcode.io"
             className="font-semibold text-sky-600 underline decoration-sky-300/60 underline-offset-2 transition hover:text-sky-700"
           >
-            support@keepswimmin.com
+            developer@thoughtfulcode.io
           </a>
         </p>
       </section>

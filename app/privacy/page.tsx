@@ -7,7 +7,7 @@ import { publicAsset } from "@/lib/base-path";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
-  description: "How Keep Swimmin' collects, uses, and protects your information.",
+  description: "How Thoughtful Code collects, uses, and protects your information for the Keep Swimmin' app.",
 };
 
 export default function PrivacyPage() {
@@ -23,10 +23,9 @@ export default function PrivacyPage() {
             <Image
               src={publicAsset("/images/whale.png")}
               alt=""
-              width={24}
-              height={24}
-              className="h-6 w-6 rounded-lg object-contain shadow-sm ring-1 ring-slate-200/80"
-              style={{ width: "auto", height: "auto" }}
+              width={32}
+              height={32}
+              className="h-8 w-8 shrink-0 rounded-md object-contain"
             />
             <span className="font-semibold text-slate-700">Back to Keep Swimmin&apos;</span>
           </Link>
@@ -41,9 +40,9 @@ export default function PrivacyPage() {
           </div>
           <h1 className="mb-4 text-4xl font-bold tracking-tight text-slate-800 md:text-5xl">Privacy Policy</h1>
           <p className="mx-auto max-w-2xl text-lg leading-relaxed text-slate-600">
-            Keep Swimmin&apos; (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) respects your privacy and is committed to
-            protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your
-            information when you use our mobile application.
+            Thoughtful Code (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) respects your privacy and is committed to
+            protecting your personal information when you use the Keep Swimmin&apos; mobile application (the
+            &quot;App&quot;). This Privacy Policy explains how we collect, use, and safeguard your information.
           </p>
           <p className="mt-5 text-sm text-slate-500">Last updated: April 1, 2026</p>
         </div>
