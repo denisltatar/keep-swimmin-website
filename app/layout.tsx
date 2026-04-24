@@ -15,7 +15,7 @@ const lobster = Lobster({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://denisltatar.github.io/keep-swimmin-website"),
+  metadataBase: new URL("https://keep-swimmin-app-website.vercel.app"),
   title: {
     default: "Keep Swimmin' — Custom AI-generated quotes",
     template: "%s | Keep Swimmin'",
