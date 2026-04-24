@@ -20,6 +20,9 @@ export function SiteFooter() {
             <span>Keep Swimmin&apos;</span>
           </div>
           <nav className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-600">
+            <Link href="/support" className="transition-colors hover:text-sky-600">
+              Support
+            </Link>
             <Link href="/terms" className="transition-colors hover:text-sky-600">
               Terms of Service
             </Link>

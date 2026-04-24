@@ -4,7 +4,6 @@ import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import "./globals.css";
 import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
 import { publicAsset } from "@/lib/base-path";
 
 const lobster = Lobster({
@@ -39,7 +38,6 @@ export default function RootLayout({
       className={`${GeistSans.variable} ${GeistMono.variable} ${lobster.variable}`}
     >
       <body className={`${GeistSans.className} flex min-h-screen flex-col text-slate-800`}>
-        <SiteHeader />
         <div className="flex flex-1 flex-col bg-gradient-to-b from-sky-50 to-blue-50">{children}</div>
         <SiteFooter />
       </body>
