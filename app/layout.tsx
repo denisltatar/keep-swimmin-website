@@ -6,7 +6,7 @@ import "./globals.css";
 import { SiteFooter } from "@/components/site-footer";
 import { publicAsset } from "@/lib/base-path";
 
-const previewTitle = "Keep Swimmin' - Personalized motivation app";
+const previewTitle = "Keep Swimmin' - Custom AI-generated quotes";
 const previewDescription =
   "Create AI-built themes, get daily motivation that matches your mood, and grow your whale as you stay consistent.";
 const previewImage = "/images/Screenshot%202026-05-04%20at%206.45.30%E2%80%AFPM.png";
