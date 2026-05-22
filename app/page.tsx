@@ -28,7 +28,7 @@ export default function HomePage() {
             <div className="mt-8">
               <p className="text-sm font-medium text-slate-700">Get the app</p>
               <a
-                href="https://apps.apple.com/app/your-app-id"
+                href="https://apps.apple.com/us/app/keep-swimmin-ai-motivation/id6761438239"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-2 inline-block transition-opacity hover:opacity-90"
@@ -114,7 +114,7 @@ export default function HomePage() {
                 Download Keep Swimmin&apos; and take the first step toward a steadier, kinder motivation habit.
               </p>
               <Link
-                href="https://apps.apple.com/app/your-app-id"
+                href="https://apps.apple.com/us/app/keep-swimmin-ai-motivation/id6761438239"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-8 inline-flex items-center gap-2 rounded-lg bg-slate-800 px-5 py-3 text-sm font-medium text-white shadow-md transition-colors hover:bg-slate-700"
