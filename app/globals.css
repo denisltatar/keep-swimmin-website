@@ -47,3 +47,32 @@
     @apply antialiased;
   }
 }
+
+/* Feedback Hub theme is scoped so the public marketing site remains unchanged. */
+.feedback-admin.dark-mode {
+  color-scheme: dark;
+  background: #0b1220 !important;
+  color: #e5edf8 !important;
+}
+
+.feedback-admin.dark-mode .bg-white { background-color: #111a2b !important; }
+.feedback-admin.dark-mode .bg-slate-50,
+.feedback-admin.dark-mode .bg-slate-100 { background-color: #182235 !important; }
+.feedback-admin.dark-mode .border-slate-100,
+.feedback-admin.dark-mode .border-slate-200 { border-color: #273449 !important; }
+.feedback-admin.dark-mode .text-slate-900,
+.feedback-admin.dark-mode .text-slate-800,
+.feedback-admin.dark-mode .text-slate-700 { color: #e5edf8 !important; }
+.feedback-admin.dark-mode .text-slate-600,
+.feedback-admin.dark-mode .text-slate-500 { color: #aebbd0 !important; }
+.feedback-admin.dark-mode .text-slate-400 { color: #8290a6 !important; }
+.feedback-admin.dark-mode input,
+.feedback-admin.dark-mode textarea,
+.feedback-admin.dark-mode select {
+  background-color: #0e1727 !important;
+  border-color: #2a3850 !important;
+  color: #e5edf8 !important;
+}
+.feedback-admin.dark-mode input::placeholder,
+.feedback-admin.dark-mode textarea::placeholder { color: #718096; }
+.feedback-admin.dark-mode [class*="bg-[#f4f7ff]"] { background-color: #14213a !important; }
