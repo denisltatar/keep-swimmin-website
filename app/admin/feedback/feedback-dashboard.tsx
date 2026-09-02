@@ -5,7 +5,7 @@ import {
   GoogleAuthProvider,
   OAuthProvider,
   onAuthStateChanged,
-  signInWithPopup,
+  signInWithRedirect,
   signOut,
   type User,
 } from "firebase/auth";
@@ -272,7 +272,7 @@ export function FeedbackDashboard() {
     try {
       const authProvider = provider === "apple" ? new OAuthProvider("apple.com") : new GoogleAuthProvider();
       if (provider === "apple") authProvider.addScope("email");
-      await signInWithPopup(firebaseAuth, authProvider);
+      await signInWithRedirect(firebaseAuth, authProvider);
     } catch (error) {
       setDataError(error instanceof Error ? error.message : "Sign-in could not be completed.");
     }
