@@ -7,7 +7,7 @@ const firebaseConfig = {
   projectId: "keepswimmin-ios",
   appId: "1:76251509001:web:6a955ae9d83db80859e3d8",
   storageBucket: "keepswimmin-ios.firebasestorage.app",
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? "missing-firebase-api-key",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: "keepswimmin-ios.firebaseapp.com",
   messagingSenderId: "76251509001",
 };

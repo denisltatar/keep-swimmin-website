@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   GoogleAuthProvider,
-  OAuthProvider,
   onAuthStateChanged,
   signInWithRedirect,
   signOut,
@@ -267,12 +266,10 @@ export function FeedbackDashboard() {
     }
   }
 
-  async function signIn(provider: "apple" | "google") {
+  async function signIn() {
     setDataError("");
     try {
-      const authProvider = provider === "apple" ? new OAuthProvider("apple.com") : new GoogleAuthProvider();
-      if (provider === "apple") authProvider.addScope("email");
-      await signInWithRedirect(firebaseAuth, authProvider);
+      await signInWithRedirect(firebaseAuth, new GoogleAuthProvider());
     } catch (error) {
       setDataError(error instanceof Error ? error.message : "Sign-in could not be completed.");
     }
@@ -428,8 +425,8 @@ function PortalMessage({ title, body, action }: { title: string; body: string; a
   return <main className="fixed inset-0 z-50 grid place-items-center bg-[#f7f9fc] p-6 text-slate-900"><div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-xl shadow-slate-200/50"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#5285f7] text-lg font-black text-white">K</div><h1 className="mt-5 text-xl font-bold">{title}</h1><p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">{body}</p>{action && <div className="mt-5">{action}</div>}</div></main>;
 }
 
-function SignInScreen({ error, onSignIn }: { error: string; onSignIn: (provider: "apple" | "google") => Promise<void> }) {
-  return <main className="fixed inset-0 z-50 grid place-items-center bg-[#f7f9fc] p-6 text-slate-900"><div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-xl shadow-slate-200/50"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#5285f7] text-lg font-black text-white">K</div><p className="mt-5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#5285f7]">Private admin portal</p><h1 className="mt-2 text-2xl font-bold">Welcome to Feedback Hub</h1><p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">Sign in with the same account you use for Keep Swimmin’ to view the live community feed.</p><div className="mt-6 space-y-2"><button onClick={() => onSignIn("apple")} className="w-full rounded-xl bg-slate-950 py-3 text-sm font-semibold text-white">Continue with Apple</button><button onClick={() => onSignIn("google")} className="w-full rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Continue with Google</button></div>{error && <p className="mt-4 rounded-xl bg-rose-50 p-3 text-left text-xs leading-5 text-rose-700">{error}</p>}</div></main>;
+function SignInScreen({ error, onSignIn }: { error: string; onSignIn: () => Promise<void> }) {
+  return <main className="fixed inset-0 z-50 grid place-items-center bg-[#f7f9fc] p-6 text-slate-900"><div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-xl shadow-slate-200/50"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#5285f7] text-lg font-black text-white">K</div><p className="mt-5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#5285f7]">Private admin portal</p><h1 className="mt-2 text-2xl font-bold">Welcome to Feedback Hub</h1><p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">Sign in with the Google account you use for Keep Swimmin’ to view the live community feed.</p><div className="mt-6"><button onClick={onSignIn} className="w-full rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Continue with Google</button></div>{error && <p className="mt-4 rounded-xl bg-rose-50 p-3 text-left text-xs leading-5 text-rose-700">{error}</p>}</div></main>;
 }
 
 function normalizeCategory(value: unknown): Category {
