@@ -6,6 +6,8 @@ import {
   getRedirectResult,
   onAuthStateChanged,
   signInWithRedirect,
+  setPersistence,
+  browserLocalPersistence,
   signOut,
   type User,
 } from "firebase/auth";
@@ -115,6 +117,7 @@ export function FeedbackDashboard() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [dataError, setDataError] = useState("");
+  const [authDebug, setAuthDebug] = useState<string[]>([]);
   const [comments, setComments] = useState<FeedbackComment[]>([]);
   const [loadingComments, setLoadingComments] = useState(false);
   const [dashboardView, setDashboardView] = useState<DashboardView>("list");
@@ -140,7 +143,14 @@ export function FeedbackDashboard() {
     setDashboardView(window.localStorage.getItem("feedback-hub-view") === "board" ? "board" : "list");
   }, []);
 
-  useEffect(() => onAuthStateChanged(firebaseAuth, async (nextUser) => {
+  useEffect(() => {
+    const logAuth = (message: string) => {
+      console.info("[Feedback Hub auth]", message);
+      setAuthDebug((current) => [...current.slice(-4), `${new Date().toLocaleTimeString()} ${message}`]);
+    };
+    void setPersistence(firebaseAuth, browserLocalPersistence).then(() => logAuth("persistence ready")).catch((error) => logAuth(`persistence error: ${error instanceof Error ? error.message : String(error)}`));
+    return onAuthStateChanged(firebaseAuth, async (nextUser) => {
+    logAuth(nextUser ? `auth state: ${nextUser.email ?? "signed-in user"}` : "auth state: signed out");
     setUser(nextUser);
     setAuthReady(true);
     if (!nextUser) {
@@ -151,7 +161,8 @@ export function FeedbackDashboard() {
     const token = await nextUser.getIdTokenResult(true);
     const normalizedEmail = nextUser.email?.trim().toLowerCase();
     setIsAdmin(token.claims.admin === true || (normalizedEmail ? adminEmailAllowlist.has(normalizedEmail) : false));
-  }), []);
+    });
+  }, []);
 
   useEffect(() => {
     // Resolve any pending redirect sign-in and prevent a stale auth session
@@ -165,6 +176,7 @@ export function FeedbackDashboard() {
       setAuthReady(true);
     }).catch((error) => {
       setDataError(error instanceof Error ? error.message : "Google sign-in could not be completed.");
+      setAuthDebug((current) => [...current.slice(-4), `redirect error: ${error instanceof Error ? error.message : String(error)}`]);
     }).finally(() => setAuthReady((current) => current || true));
     const timeout = window.setTimeout(() => setAuthReady(true), 5000);
     return () => window.clearTimeout(timeout);
@@ -352,6 +364,7 @@ export function FeedbackDashboard() {
   async function signIn() {
     setDataError("");
     try {
+      await setPersistence(firebaseAuth, browserLocalPersistence);
       await signInWithRedirect(firebaseAuth, new GoogleAuthProvider());
     } catch (error) {
       setDataError(error instanceof Error ? error.message : "Sign-in could not be completed.");
@@ -394,7 +407,7 @@ export function FeedbackDashboard() {
   }
 
   if (!authReady) return <PortalMessage title="Opening Feedback Hub…" body="Checking your secure admin session." />;
-  if (!user) return <SignInScreen error={dataError} onSignIn={signIn} />;
+  if (!user) return <SignInScreen error={dataError} debug={authDebug} onSignIn={signIn} />;
   if (!isAdmin) return <PortalMessage title="Admin access required" body={`You’re signed in as ${user.email ?? "this account"}, but this account does not have the Firebase admin permission.`} action={<button onClick={() => signOut(firebaseAuth)} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold">Use another account</button>} />;
   if (loadingPosts && posts.length === 0) return <PortalMessage title="Loading real feedback…" body="Connecting to the live Keep Swimmin’ community feed." />;
   if (!selected && !loadingPosts) return <PortalMessage title="No feedback yet" body="New posts from the app will appear here automatically." action={<button onClick={() => signOut(firebaseAuth)} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold">Sign out</button>} />;
@@ -812,8 +825,8 @@ function PortalMessage({ title, body, action }: { title: string; body: string; a
   return <main className="fixed inset-0 z-50 grid place-items-center bg-[#f7f9fc] p-6 text-slate-900"><div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-xl shadow-slate-200/50"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#5285f7] text-lg font-black text-white">K</div><h1 className="mt-5 text-xl font-bold">{title}</h1><p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">{body}</p>{action && <div className="mt-5">{action}</div>}</div></main>;
 }
 
-function SignInScreen({ error, onSignIn }: { error: string; onSignIn: () => Promise<void> }) {
-  return <main className="fixed inset-0 z-50 grid place-items-center bg-[#f7f9fc] p-6 text-slate-900"><div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-xl shadow-slate-200/50"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#5285f7] text-lg font-black text-white">K</div><p className="mt-5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#5285f7]">Private admin portal</p><h1 className="mt-2 text-2xl font-bold">Welcome to Feedback Hub</h1><p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">Sign in with the Google account you use for Keep Swimmin’ to view the live community feed.</p><div className="mt-6"><button onClick={onSignIn} className="w-full rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Continue with Google</button></div>{error && <p className="mt-4 rounded-xl bg-rose-50 p-3 text-left text-xs leading-5 text-rose-700">{error}</p>}</div></main>;
+function SignInScreen({ error, debug, onSignIn }: { error: string; debug: string[]; onSignIn: () => Promise<void> }) {
+  return <main className="fixed inset-0 z-50 grid place-items-center bg-[#f7f9fc] p-6 text-slate-900"><div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-xl shadow-slate-200/50"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#5285f7] text-lg font-black text-white">K</div><p className="mt-5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#5285f7]">Private admin portal</p><h1 className="mt-2 text-2xl font-bold">Welcome to Feedback Hub</h1><p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">Sign in with the Google account you use for Keep Swimmin’ to view the live community feed.</p><div className="mt-6"><button onClick={onSignIn} className="w-full rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Continue with Google</button></div>{error && <p className="mt-4 rounded-xl bg-rose-50 p-3 text-left text-xs leading-5 text-rose-700">{error}</p>}{debug.length > 0 && <details className="mt-4 text-left"><summary className="cursor-pointer text-xs font-semibold text-slate-400">Auth diagnostics</summary><pre className="mt-2 max-h-32 overflow-auto rounded-xl bg-slate-950 p-3 text-[10px] text-slate-300">{debug.join("\n")}</pre></details>}</div></main>;
 }
 
 function normalizeCategory(value: unknown): Category {
