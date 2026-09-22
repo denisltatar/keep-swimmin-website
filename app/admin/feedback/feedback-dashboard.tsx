@@ -156,7 +156,14 @@ export function FeedbackDashboard() {
   useEffect(() => {
     // Resolve any pending redirect sign-in and prevent a stale auth session
     // from leaving the portal on the loading screen forever.
-    void getRedirectResult(firebaseAuth).catch((error) => {
+    void getRedirectResult(firebaseAuth).then(async (result) => {
+      if (!result?.user) return;
+      const token = await result.user.getIdTokenResult(true);
+      const normalizedEmail = result.user.email?.trim().toLowerCase();
+      setUser(result.user);
+      setIsAdmin(token.claims.admin === true || (normalizedEmail ? adminEmailAllowlist.has(normalizedEmail) : false));
+      setAuthReady(true);
+    }).catch((error) => {
       setDataError(error instanceof Error ? error.message : "Google sign-in could not be completed.");
     }).finally(() => setAuthReady((current) => current || true));
     const timeout = window.setTimeout(() => setAuthReady(true), 5000);
