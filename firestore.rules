@@ -16,6 +16,15 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read, write: if signedIn() && request.auth.uid == userId;
+
+      match /notifications/{notificationId} {
+        allow read: if signedIn() && request.auth.uid == userId;
+        allow update: if signedIn()
+          && request.auth.uid == userId
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['isRead']);
+        allow create, delete: if false;
+      }
     }
 
     match /fcmTokens/{userId} {
