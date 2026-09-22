@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { FeedbackDashboard } from "./feedback-dashboard";
+import { FeedbackDashboardLoader } from "./feedback-dashboard-loader";
 
 export const metadata: Metadata = {
   title: "Feedback Hub Admin",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function FeedbackAdminPage() {
-  return <FeedbackDashboard />;
+  return <FeedbackDashboardLoader />;
 }
