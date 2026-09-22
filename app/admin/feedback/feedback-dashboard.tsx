@@ -86,6 +86,10 @@ type FeedbackComment = {
 };
 
 const statuses: Status[] = ["Submitted", "Reviewing", "Planned", "In Progress", "Shipped"];
+const adminEmailAllowlist = new Set([
+  "denis.tatar8@gmail.com",
+  "developer@thoughtfulcode.io",
+]);
 const categories: Category[] = ["Feature Idea", "Bug & Problem", "Content & Personalization", "General Feedback"];
 
 const statusStyle: Record<Status, string> = {
@@ -144,7 +148,8 @@ export function FeedbackDashboard() {
       return;
     }
     const token = await nextUser.getIdTokenResult(true);
-    setIsAdmin(token.claims.admin === true);
+    const normalizedEmail = nextUser.email?.trim().toLowerCase();
+    setIsAdmin(token.claims.admin === true || (normalizedEmail ? adminEmailAllowlist.has(normalizedEmail) : false));
   }), []);
 
   useEffect(() => {
