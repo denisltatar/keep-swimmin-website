@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   GoogleAuthProvider,
+  getRedirectResult,
   onAuthStateChanged,
   signInWithRedirect,
   signOut,
@@ -151,6 +152,16 @@ export function FeedbackDashboard() {
     const normalizedEmail = nextUser.email?.trim().toLowerCase();
     setIsAdmin(token.claims.admin === true || (normalizedEmail ? adminEmailAllowlist.has(normalizedEmail) : false));
   }), []);
+
+  useEffect(() => {
+    // Resolve any pending redirect sign-in and prevent a stale auth session
+    // from leaving the portal on the loading screen forever.
+    void getRedirectResult(firebaseAuth).catch((error) => {
+      setDataError(error instanceof Error ? error.message : "Google sign-in could not be completed.");
+    }).finally(() => setAuthReady((current) => current || true));
+    const timeout = window.setTimeout(() => setAuthReady(true), 5000);
+    return () => window.clearTimeout(timeout);
+  }, []);
 
   useEffect(() => {
     if (!user) return;
