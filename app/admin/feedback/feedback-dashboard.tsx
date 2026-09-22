@@ -267,6 +267,7 @@ export function FeedbackDashboard() {
 
   async function updateStatus(status: Status, postId = selected?.id) {
     if (!postId || !isAdmin) return;
+    setDataError("");
     try {
       await updateDoc(doc(firestore, "communityPosts", postId), { status, updatedAt: serverTimestamp() });
       await recordAction("update_status", postId);

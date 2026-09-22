@@ -1,0 +1,75 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn() && (
+        request.auth.token.admin == true
+        || request.auth.token.email == 'developer@thoughtfulcode.io'
+        || request.auth.token.email == 'denis.tatar8@gmail.com'
+      );
+    }
+
+    match /users/{userId} {
+      allow read, write: if signedIn() && request.auth.uid == userId;
+    }
+
+    match /fcmTokens/{userId} {
+      allow read, write: if signedIn() && request.auth.uid == userId;
+    }
+
+    match /communityPosts/{postId} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && request.resource.data.authorID == request.auth.uid;
+
+      allow update: if isAdmin()
+        || (signedIn()
+          && resource.data.authorID == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['title', 'body', 'category', 'updatedAt']))
+        || (signedIn()
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['supporterIDs', 'updatedAt'])
+          && request.resource.data.supporterIDs.toSet()
+            .difference(resource.data.supporterIDs.toSet())
+            .hasOnly([request.auth.uid])
+          && resource.data.supporterIDs.toSet()
+            .difference(request.resource.data.supporterIDs.toSet())
+            .hasOnly([request.auth.uid])
+          && request.resource.data.supporterIDs.size()
+            >= resource.data.supporterIDs.size() - 1
+          && request.resource.data.supporterIDs.size()
+            <= resource.data.supporterIDs.size() + 1);
+
+      allow delete: if isAdmin()
+        || (signedIn() && resource.data.authorID == request.auth.uid);
+
+      match /comments/{commentId} {
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && request.resource.data.authorID == request.auth.uid
+          && request.resource.data.body is string
+          && request.resource.data.body.size() > 0
+          && request.resource.data.body.size() <= 1000
+          && (request.resource.data.isOfficial == false || isAdmin());
+        allow update, delete: if isAdmin()
+          || (signedIn() && resource.data.authorID == request.auth.uid);
+      }
+    }
+
+    match /communityAdminAudit/{auditId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.actorID == request.auth.uid
+        && request.resource.data.action is string
+        && request.resource.data.postID is string;
+      allow update, delete: if false;
+    }
+  }
+}
