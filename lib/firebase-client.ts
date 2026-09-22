@@ -16,8 +16,8 @@ const firebaseConfig = {
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-export const firebaseAuth = typeof window === "undefined"
-  ? (null as unknown as ReturnType<typeof getAuth>)
-  : getAuth(app);
+export function getFirebaseAuth() {
+  return getAuth(app);
+}
 export const firestore = getFirestore(app);
 export const firebaseStorage = getStorage(app);

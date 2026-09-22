@@ -24,7 +24,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { deleteObject, ref } from "firebase/storage";
-import { firebaseAuth, firebaseStorage, firestore } from "@/lib/firebase-client";
+import { firebaseStorage, firestore, getFirebaseAuth } from "@/lib/firebase-client";
 import {
   Bell,
   Bug,
@@ -144,6 +144,7 @@ export function FeedbackDashboard() {
   }, []);
 
   useEffect(() => {
+    const firebaseAuth = getFirebaseAuth();
     const logAuth = (message: string) => {
       console.info("[Feedback Hub auth]", message);
       setAuthDebug((current) => [...current.slice(-4), `${new Date().toLocaleTimeString()} ${message}`]);
@@ -165,8 +166,7 @@ export function FeedbackDashboard() {
   }, []);
 
   useEffect(() => {
-    // Resolve any pending redirect sign-in and prevent a stale auth session
-    // from leaving the portal on the loading screen forever.
+    const firebaseAuth = getFirebaseAuth();
     void getRedirectResult(firebaseAuth).then(async (result) => {
       if (!result?.user) return;
       const token = await result.user.getIdTokenResult(true);
@@ -174,12 +174,12 @@ export function FeedbackDashboard() {
       setUser(result.user);
       setIsAdmin(token.claims.admin === true || (normalizedEmail ? adminEmailAllowlist.has(normalizedEmail) : false));
       setAuthReady(true);
+      setAuthDebug((current) => [...current.slice(-4), `${new Date().toLocaleTimeString()} redirect signed in: ${result.user.email ?? result.user.uid}`]);
     }).catch((error) => {
-      setDataError(error instanceof Error ? error.message : "Google sign-in could not be completed.");
-      setAuthDebug((current) => [...current.slice(-4), `redirect error: ${error instanceof Error ? error.message : String(error)}`]);
-    }).finally(() => setAuthReady((current) => current || true));
-    const timeout = window.setTimeout(() => setAuthReady(true), 5000);
-    return () => window.clearTimeout(timeout);
+      const message = error instanceof Error ? error.message : String(error);
+      setDataError(message);
+      setAuthDebug((current) => [...current.slice(-4), `${new Date().toLocaleTimeString()} redirect error: ${message}`]);
+    });
   }, []);
 
   useEffect(() => {
@@ -362,13 +362,21 @@ export function FeedbackDashboard() {
   }
 
   async function signIn() {
+    const firebaseAuth = getFirebaseAuth();
     setDataError("");
+    setAuthDebug((current) => [...current.slice(-4), `${new Date().toLocaleTimeString()} opening Google sign-in`]);
     try {
       await setPersistence(firebaseAuth, browserLocalPersistence);
       await signInWithRedirect(firebaseAuth, new GoogleAuthProvider());
     } catch (error) {
-      setDataError(error instanceof Error ? error.message : "Sign-in could not be completed.");
+      const message = error instanceof Error ? error.message : "Sign-in could not be completed.";
+      setDataError(message);
+      setAuthDebug((current) => [...current.slice(-4), `${new Date().toLocaleTimeString()} sign-in error: ${message}`]);
     }
+  }
+
+  function signOutUser() {
+    void signOut(getFirebaseAuth());
   }
 
   function toggleTheme() {
@@ -408,9 +416,9 @@ export function FeedbackDashboard() {
 
   if (!authReady) return <PortalMessage title="Opening Feedback Hub…" body="Checking your secure admin session." />;
   if (!user) return <SignInScreen error={dataError} debug={authDebug} onSignIn={signIn} />;
-  if (!isAdmin) return <PortalMessage title="Admin access required" body={`You’re signed in as ${user.email ?? "this account"}, but this account does not have the Firebase admin permission.`} action={<button onClick={() => signOut(firebaseAuth)} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold">Use another account</button>} />;
+  if (!isAdmin) return <PortalMessage title="Admin access required" body={`You’re signed in as ${user.email ?? "this account"}, but this account does not have the Firebase admin permission.`} action={<button onClick={signOutUser} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold">Use another account</button>} />;
   if (loadingPosts && posts.length === 0) return <PortalMessage title="Loading real feedback…" body="Connecting to the live Keep Swimmin’ community feed." />;
-  if (!selected && !loadingPosts) return <PortalMessage title="No feedback yet" body="New posts from the app will appear here automatically." action={<button onClick={() => signOut(firebaseAuth)} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold">Sign out</button>} />;
+  if (!selected && !loadingPosts) return <PortalMessage title="No feedback yet" body="New posts from the app will appear here automatically." action={<button onClick={signOutUser} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold">Sign out</button>} />;
 
   return (
     <main className={`feedback-admin fixed inset-0 z-50 flex overflow-hidden bg-[#f7f9fc] text-slate-900 ${darkTheme ? "dark-mode" : ""}`}>
@@ -439,7 +447,7 @@ export function FeedbackDashboard() {
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">{(user.displayName ?? user.email ?? "A").split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</div>
             <div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold">{user.displayName ?? user.email ?? "Administrator"}</p><p className="truncate text-[11px] text-slate-400">Administrator</p></div>
           </div>
-          <button onClick={() => signOut(firebaseAuth)} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600">
+          <button onClick={signOutUser} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600">
             <LogOut className="h-4 w-4" /> Sign out
           </button>
         </div>
