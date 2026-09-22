@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   GoogleAuthProvider,
   onAuthStateChanged,
-  signInWithPopup,
+  signInWithRedirect,
   signOut,
   type User,
 } from "firebase/auth";
@@ -334,7 +334,7 @@ export function FeedbackDashboard() {
   async function signIn() {
     setDataError("");
     try {
-      await signInWithPopup(firebaseAuth, new GoogleAuthProvider());
+      await signInWithRedirect(firebaseAuth, new GoogleAuthProvider());
     } catch (error) {
       setDataError(error instanceof Error ? error.message : "Sign-in could not be completed.");
     }
