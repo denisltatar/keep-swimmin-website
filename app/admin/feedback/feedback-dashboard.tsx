@@ -2,12 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  GoogleAuthProvider,
-  getRedirectResult,
-  onAuthStateChanged,
-  signInWithRedirect,
-  setPersistence,
   browserLocalPersistence,
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  setPersistence,
   signOut,
   type User,
 } from "firebase/auth";
@@ -162,23 +161,6 @@ export function FeedbackDashboard() {
     const token = await nextUser.getIdTokenResult(true);
     const normalizedEmail = nextUser.email?.trim().toLowerCase();
     setIsAdmin(token.claims.admin === true || (normalizedEmail ? adminEmailAllowlist.has(normalizedEmail) : false));
-    });
-  }, []);
-
-  useEffect(() => {
-    const firebaseAuth = getFirebaseAuth();
-    void getRedirectResult(firebaseAuth).then(async (result) => {
-      if (!result?.user) return;
-      const token = await result.user.getIdTokenResult(true);
-      const normalizedEmail = result.user.email?.trim().toLowerCase();
-      setUser(result.user);
-      setIsAdmin(token.claims.admin === true || (normalizedEmail ? adminEmailAllowlist.has(normalizedEmail) : false));
-      setAuthReady(true);
-      setAuthDebug((current) => [...current.slice(-4), `${new Date().toLocaleTimeString()} redirect signed in: ${result.user.email ?? result.user.uid}`]);
-    }).catch((error) => {
-      const message = error instanceof Error ? error.message : String(error);
-      setDataError(message);
-      setAuthDebug((current) => [...current.slice(-4), `${new Date().toLocaleTimeString()} redirect error: ${message}`]);
     });
   }, []);
 
@@ -361,17 +343,29 @@ export function FeedbackDashboard() {
     }
   }
 
-  async function signIn() {
+  async function signIn(email: string, password: string) {
     const firebaseAuth = getFirebaseAuth();
     setDataError("");
-    setAuthDebug((current) => [...current.slice(-4), `${new Date().toLocaleTimeString()} opening Google sign-in`]);
+    setAuthDebug((current) => [...current.slice(-4), `${new Date().toLocaleTimeString()} starting email sign-in`]);
     try {
       await setPersistence(firebaseAuth, browserLocalPersistence);
-      await signInWithRedirect(firebaseAuth, new GoogleAuthProvider());
+      await signInWithEmailAndPassword(firebaseAuth, email.trim().toLowerCase(), password);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Sign-in could not be completed.";
       setDataError(message);
       setAuthDebug((current) => [...current.slice(-4), `${new Date().toLocaleTimeString()} sign-in error: ${message}`]);
+    }
+  }
+
+  async function resetPassword(email: string) {
+    setDataError("");
+    try {
+      await sendPasswordResetEmail(getFirebaseAuth(), email.trim().toLowerCase());
+      setAuthDebug((current) => [...current.slice(-4), `${new Date().toLocaleTimeString()} password reset email sent`]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Password reset could not be sent.";
+      setDataError(message);
+      setAuthDebug((current) => [...current.slice(-4), `${new Date().toLocaleTimeString()} reset error: ${message}`]);
     }
   }
 
@@ -415,7 +409,7 @@ export function FeedbackDashboard() {
   }
 
   if (!authReady) return <PortalMessage title="Opening Feedback Hub…" body="Checking your secure admin session." />;
-  if (!user) return <SignInScreen error={dataError} debug={authDebug} onSignIn={signIn} />;
+  if (!user) return <SignInScreen error={dataError} debug={authDebug} onSignIn={signIn} onResetPassword={resetPassword} />;
   if (!isAdmin) return <PortalMessage title="Admin access required" body={`You’re signed in as ${user.email ?? "this account"}, but this account does not have the Firebase admin permission.`} action={<button onClick={signOutUser} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold">Use another account</button>} />;
   if (loadingPosts && posts.length === 0) return <PortalMessage title="Loading real feedback…" body="Connecting to the live Keep Swimmin’ community feed." />;
   if (!selected && !loadingPosts) return <PortalMessage title="No feedback yet" body="New posts from the app will appear here automatically." action={<button onClick={signOutUser} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold">Sign out</button>} />;
@@ -833,8 +827,26 @@ function PortalMessage({ title, body, action }: { title: string; body: string; a
   return <main className="fixed inset-0 z-50 grid place-items-center bg-[#f7f9fc] p-6 text-slate-900"><div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-xl shadow-slate-200/50"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#5285f7] text-lg font-black text-white">K</div><h1 className="mt-5 text-xl font-bold">{title}</h1><p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">{body}</p>{action && <div className="mt-5">{action}</div>}</div></main>;
 }
 
-function SignInScreen({ error, debug, onSignIn }: { error: string; debug: string[]; onSignIn: () => Promise<void> }) {
-  return <main className="fixed inset-0 z-50 grid place-items-center bg-[#f7f9fc] p-6 text-slate-900"><div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-xl shadow-slate-200/50"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#5285f7] text-lg font-black text-white">K</div><p className="mt-5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#5285f7]">Private admin portal</p><h1 className="mt-2 text-2xl font-bold">Welcome to Feedback Hub</h1><p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">Sign in with the Google account you use for Keep Swimmin’ to view the live community feed.</p><div className="mt-6"><button onClick={onSignIn} className="w-full rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Continue with Google</button></div>{error && <p className="mt-4 rounded-xl bg-rose-50 p-3 text-left text-xs leading-5 text-rose-700">{error}</p>}{debug.length > 0 && <details className="mt-4 text-left"><summary className="cursor-pointer text-xs font-semibold text-slate-400">Auth diagnostics</summary><pre className="mt-2 max-h-32 overflow-auto rounded-xl bg-slate-950 p-3 text-[10px] text-slate-300">{debug.join("\n")}</pre></details>}</div></main>;
+function SignInScreen({ error, debug, onSignIn, onResetPassword }: { error: string; debug: string[]; onSignIn: (email: string, password: string) => Promise<void>; onResetPassword: (email: string) => Promise<void> }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSubmitting(true);
+    await onSignIn(email, password);
+    setSubmitting(false);
+  }
+
+  async function reset() {
+    if (!email.trim()) return;
+    await onResetPassword(email);
+    setResetSent(true);
+  }
+
+  return <main className="fixed inset-0 z-50 grid place-items-center bg-[#f7f9fc] p-6 text-slate-900"><div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-xl shadow-slate-200/50"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#5285f7] text-lg font-black text-white">K</div><p className="mt-5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#5285f7]">Private admin portal</p><h1 className="mt-2 text-2xl font-bold">Welcome to Feedback Hub</h1><p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">Sign in with your admin email and password.</p><form onSubmit={submit} className="mt-6 space-y-3 text-left"><label className="block text-xs font-semibold text-slate-600">Email<input type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50" placeholder="you@example.com" /></label><label className="block text-xs font-semibold text-slate-600">Password<input type="password" required autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50" placeholder="Your password" /></label><button disabled={submitting} className="mt-2 w-full rounded-xl bg-[#5285f7] py-3 text-sm font-semibold text-white disabled:opacity-60">{submitting ? "Signing in…" : "Sign in"}</button></form><button type="button" onClick={reset} disabled={!email.trim()} className="mt-4 text-xs font-semibold text-[#5285f7] disabled:text-slate-300">Forgot or need to set your password?</button>{resetSent && !error && <p className="mt-3 text-xs text-emerald-600">Password reset email sent. Check your inbox.</p>}{error && <p className="mt-4 rounded-xl bg-rose-50 p-3 text-left text-xs leading-5 text-rose-700">{error}</p>}{debug.length > 0 && <details className="mt-4 text-left"><summary className="cursor-pointer text-xs font-semibold text-slate-400">Auth diagnostics</summary><pre className="mt-2 max-h-32 overflow-auto rounded-xl bg-slate-950 p-3 text-[10px] text-slate-300">{debug.join("\n")}</pre></details>}</div></main>;
 }
 
 function normalizeCategory(value: unknown): Category {
