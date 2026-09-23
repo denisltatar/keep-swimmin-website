@@ -267,6 +267,16 @@ export function FeedbackDashboard() {
 
   async function updateStatus(status: Status, postId = selected?.id) {
     if (!postId || !isAdmin) return;
+    const post = posts.find((candidate) => candidate.id === postId);
+    if (
+      status === "Shipped" &&
+      post?.status !== "Shipped" &&
+      !window.confirm(
+        "Mark this feedback as shipped? The author and supporters will receive a push notification telling them to update the app.",
+      )
+    ) {
+      return;
+    }
     setDataError("");
     try {
       await updateDoc(doc(firestore, "communityPosts", postId), { status, updatedAt: serverTimestamp() });
