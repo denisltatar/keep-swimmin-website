@@ -112,6 +112,19 @@ type BroadcastRecipient = {
   errorCode: string;
 };
 
+type BroadcastAudienceMember = {
+  userID: string;
+  displayName: string;
+  email: string;
+  hasToken: boolean;
+  deviceName: string;
+  deviceModel: string;
+  systemVersion: string;
+  appVersion: string;
+  appBuild: string;
+  registeredAt: number | null;
+};
+
 const statuses: Status[] = ["Submitted", "Reviewing", "Planned", "In Progress", "Fixed"];
 const adminEmailAllowlist = new Set([
   "denis.tatar8@gmail.com",
@@ -183,6 +196,10 @@ export function FeedbackDashboard() {
   const [broadcastResult, setBroadcastResult] = useState("");
   const [broadcastHistoryOpen, setBroadcastHistoryOpen] = useState(false);
   const [broadcastHistory, setBroadcastHistory] = useState<BroadcastHistoryItem[]>([]);
+  const [audienceOpen, setAudienceOpen] = useState(false);
+  const [broadcastAudience, setBroadcastAudience] = useState<BroadcastAudienceMember[]>([]);
+  const [selectedRecipientIDs, setSelectedRecipientIDs] = useState<Set<string>>(new Set());
+  const [loadingAudience, setLoadingAudience] = useState(false);
 
   useEffect(() => {
     const saved = window.localStorage.getItem("feedback-hub-theme");
@@ -318,6 +335,21 @@ export function FeedbackDashboard() {
       }));
     }, (error) => setDataError(error.message));
   }, [broadcastHistoryOpen, isAdmin, user]);
+
+  useEffect(() => {
+    if (!user || !isAdmin || !audienceOpen) return;
+    setLoadingAudience(true);
+    setDataError("");
+    const loadAudience = httpsCallable<
+      Record<string, never>,
+      { users: BroadcastAudienceMember[] }
+    >(firebaseFunctions, "listBroadcastAudience");
+    void loadAudience({}).then((response) => {
+      setBroadcastAudience(response.data.users);
+    }).catch((error) => {
+      setDataError(error instanceof Error ? error.message : "The audience could not be loaded.");
+    }).finally(() => setLoadingAudience(false));
+  }, [audienceOpen, isAdmin, user]);
 
   const filteredPosts = useMemo(() => {
     const clean = query.trim().toLowerCase();
@@ -496,18 +528,18 @@ export function FeedbackDashboard() {
     const actionURL = body.startsWith("A new Keep Swimmin’ update is available!")
       ? "https://apps.apple.com/app/id6761438239"
       : "";
-    if (!isAdmin || !adminMode || !body || sendingBroadcast) return;
-    if (!window.confirm("Send this notification to every registered device? This cannot be undone.")) return;
+    if (!isAdmin || !adminMode || !body || !selectedRecipientIDs.size || sendingBroadcast) return;
+    if (!window.confirm(`Send this notification to ${selectedRecipientIDs.size} selected user${selectedRecipientIDs.size === 1 ? "" : "s"}? This cannot be undone.`)) return;
 
     setSendingBroadcast(true);
     setBroadcastResult("");
     setDataError("");
     try {
       const send = httpsCallable<
-        { body: string; actionURL?: string },
+        { body: string; actionURL?: string; recipientIDs: string[] },
         { targetedDevices: number; successCount: number; failureCount: number }
       >(firebaseFunctions, "sendAdminBroadcast");
-      const response = await send({ body, ...(actionURL ? { actionURL } : {}) });
+      const response = await send({ body, recipientIDs: [...selectedRecipientIDs], ...(actionURL ? { actionURL } : {}) });
       setBroadcastResult(
         `Accepted by ${response.data.successCount} device${response.data.successCount === 1 ? "" : "s"}` +
         (response.data.failureCount ? `; ${response.data.failureCount} could not be reached.` : "."),
@@ -570,7 +602,8 @@ export function FeedbackDashboard() {
             <button onClick={() => { setAdminMode((enabled) => !enabled); setActionsMenu(false); setStatusMenu(false); }} aria-pressed={adminMode} title={adminMode ? "Disable editing controls" : "Enable editing controls"} className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-semibold transition ${adminMode ? "border-amber-300 bg-amber-50 text-amber-700" : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"}`}>{adminMode ? <ShieldCheck className="h-4 w-4" /> : <Shield className="h-4 w-4" />}{adminMode ? "Admin on" : "Admin off"}</button>
             <button onClick={toggleTheme} aria-label={darkTheme ? "Use light theme" : "Use dark theme"} title={darkTheme ? "Use light theme" : "Use dark theme"} className="rounded-xl border border-slate-200 bg-white p-2.5 text-slate-500 transition hover:bg-slate-50">{darkTheme ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</button>
             <button disabled={!adminMode} onClick={() => setBroadcastHistoryOpen(true)} title={adminMode ? "View sent notifications" : "Enable Admin mode first"} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 disabled:opacity-55"><History className="h-3.5 w-3.5" />Sent messages</button>
-            <button disabled={!adminMode} onClick={() => { setBroadcastOpen(true); setBroadcastResult(""); }} title={adminMode ? "Write a notification for your users" : "Enable Admin mode first"} className="flex items-center gap-2 rounded-xl bg-[#5285f7] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"><Send className="h-3.5 w-3.5" />Send notification</button>
+            <button disabled={!adminMode} onClick={() => setAudienceOpen(true)} title={adminMode ? "Choose notification recipients" : "Enable Admin mode first"} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 disabled:opacity-55"><Users className="h-3.5 w-3.5" />{selectedRecipientIDs.size ? `${selectedRecipientIDs.size} selected` : "Choose recipients"}</button>
+            <button disabled={!adminMode || !selectedRecipientIDs.size} onClick={() => { setBroadcastOpen(true); setBroadcastResult(""); }} title={!adminMode ? "Enable Admin mode first" : selectedRecipientIDs.size ? "Write a notification for selected users" : "Choose at least one recipient first"} className="flex items-center gap-2 rounded-xl bg-[#5285f7] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"><Send className="h-3.5 w-3.5" />Send notification</button>
           </div>
         </header>
 
@@ -657,6 +690,8 @@ export function FeedbackDashboard() {
         </div>}
       </section>
 
+      {audienceOpen && <BroadcastAudienceModal items={broadcastAudience} selected={selectedRecipientIDs} loading={loadingAudience} onChange={setSelectedRecipientIDs} onClose={() => setAudienceOpen(false)} />}
+
       {broadcastHistoryOpen && <BroadcastHistoryModal items={broadcastHistory} onClose={() => setBroadcastHistoryOpen(false)} />}
 
       {editing && <div className="absolute inset-0 z-50 grid place-items-center bg-slate-950/30 p-6 backdrop-blur-sm"><form onSubmit={saveEdit} className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl"><div className="flex items-center justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#5285f7]">Admin access</p><h2 className="mt-1 text-xl font-bold">Edit feedback post</h2></div><button type="button" onClick={() => setEditing(null)} className="rounded-xl p-2 text-slate-400 hover:bg-slate-100"><X className="h-5 w-5" /></button></div><label className="mt-6 block text-xs font-semibold text-slate-600">Title<input required maxLength={100} value={editing.title} onChange={(event) => setEditing({ ...editing, title: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-50" /></label><label className="mt-4 block text-xs font-semibold text-slate-600">Description<textarea required maxLength={2000} value={editing.body} onChange={(event) => setEditing({ ...editing, body: event.target.value })} className="mt-2 h-32 w-full resize-none rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-50" /></label><label className="mt-4 block text-xs font-semibold text-slate-600">Category<select value={editing.category} onChange={(event) => setEditing({ ...editing, category: event.target.value as Category })} className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm"><option>Feature Idea</option><option>Bug & Problem</option><option>Content & Personalization</option><option>General Feedback</option></select></label><div className="mt-6 flex justify-end gap-2"><button type="button" onClick={() => setEditing(null)} className="rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-500 hover:bg-slate-50">Cancel</button><button className="rounded-xl bg-[#5285f7] px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-blue-200">Save changes</button></div></form></div>}
@@ -671,6 +706,31 @@ export function FeedbackDashboard() {
 
       {mediaViewer && <div onClick={() => setMediaViewer(null)} className="absolute inset-0 z-[70] flex flex-col bg-slate-950/90 p-5 backdrop-blur-md"><div className="mx-auto flex w-full max-w-6xl items-center justify-between text-white"><div><p className="text-xs font-bold">User attachment</p><p className="mt-0.5 text-[10px] text-slate-400">{mediaViewer.index + 1} of {mediaViewer.urls.length}</p></div><button onClick={() => setMediaViewer(null)} aria-label="Close gallery" className="rounded-xl border border-white/15 bg-white/10 p-2.5 transition hover:bg-white/20"><X className="h-5 w-5" /></button></div><div className="relative mx-auto flex min-h-0 w-full max-w-6xl flex-1 items-center justify-center py-5">{mediaViewer.urls.length > 1 && <button onClick={(event) => { event.stopPropagation(); setMediaViewer((viewer) => viewer && ({ ...viewer, index: (viewer.index - 1 + viewer.urls.length) % viewer.urls.length })); }} aria-label="Previous image" className="absolute left-0 z-10 rounded-full border border-white/15 bg-slate-900/70 p-3 text-white backdrop-blur transition hover:bg-slate-800"><ChevronLeft className="h-6 w-6" /></button>}<img onClick={(event) => event.stopPropagation()} src={mediaViewer.urls[mediaViewer.index]} alt={`Attachment ${mediaViewer.index + 1}`} className="max-h-full max-w-full rounded-2xl object-contain shadow-2xl shadow-black/50" />{mediaViewer.urls.length > 1 && <button onClick={(event) => { event.stopPropagation(); setMediaViewer((viewer) => viewer && ({ ...viewer, index: (viewer.index + 1) % viewer.urls.length })); }} aria-label="Next image" className="absolute right-0 z-10 rounded-full border border-white/15 bg-slate-900/70 p-3 text-white backdrop-blur transition hover:bg-slate-800"><ChevronRight className="h-6 w-6" /></button>}</div>{mediaViewer.urls.length > 1 && <div onClick={(event) => event.stopPropagation()} className="mx-auto flex max-w-full gap-2 overflow-x-auto rounded-2xl border border-white/10 bg-white/5 p-2 backdrop-blur">{mediaViewer.urls.map((url, index) => <button key={url} onClick={() => setMediaViewer({ urls: mediaViewer.urls, index })} className={`overflow-hidden rounded-xl border-2 transition ${index === mediaViewer.index ? "border-blue-400 opacity-100" : "border-transparent opacity-50 hover:opacity-90"}`}><img src={url} alt="" className="h-14 w-20 object-cover" /></button>)}</div>}</div>}
     </main>
+  );
+}
+
+function BroadcastAudienceModal({ items, selected, loading, onChange, onClose }: { items: BroadcastAudienceMember[]; selected: Set<string>; loading: boolean; onChange: (value: Set<string>) => void; onClose: () => void }) {
+  const [search, setSearch] = useState("");
+  const filtered = items.filter((item) => `${item.displayName} ${item.email} ${item.deviceName} ${item.appVersion}`.toLowerCase().includes(search.trim().toLowerCase()));
+  const eligible = items.filter((item) => item.hasToken);
+  const toggle = (userID: string) => {
+    const next = new Set(selected);
+    if (next.has(userID)) next.delete(userID); else next.add(userID);
+    onChange(next);
+  };
+
+  return (
+    <div className="absolute inset-0 z-[60] grid place-items-center bg-slate-950/30 p-6 backdrop-blur-sm">
+      <section className="flex max-h-[88vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+        <header className="flex items-start justify-between border-b border-slate-200 px-6 py-5">
+          <div><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#5285f7]">Notification audience</p><h2 className="mt-1 text-xl font-bold">Choose recipients</h2><p className="mt-1 text-xs text-slate-500">Only users with an active notification registration can be selected.</p></div>
+          <button type="button" onClick={onClose} aria-label="Close" className="rounded-xl p-2 text-slate-400 hover:bg-slate-100"><X className="h-5 w-5" /></button>
+        </header>
+        <div className="flex items-center gap-3 border-b border-slate-200 px-6 py-4"><label className="relative flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, email, device, or app version" className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-xs outline-none focus:border-blue-300 focus:bg-white" /></label><button type="button" onClick={() => onChange(new Set(eligible.map((item) => item.userID)))} className="rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-semibold text-slate-600">Select all active</button><button type="button" onClick={() => onChange(new Set())} className="rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-500">Clear</button></div>
+        <div className="overflow-y-auto p-6">{loading ? <p className="py-12 text-center text-sm text-slate-500">Loading users…</p> : <div className="space-y-2">{filtered.map((item) => <label key={item.userID} className={`flex items-start gap-3 rounded-xl border p-4 ${item.hasToken ? "cursor-pointer border-slate-200 hover:border-blue-200 hover:bg-blue-50/40" : "cursor-not-allowed border-slate-100 bg-slate-50 opacity-65"}`}><input type="checkbox" disabled={!item.hasToken} checked={selected.has(item.userID)} onChange={() => toggle(item.userID)} className="mt-1 h-4 w-4 accent-[#5285f7]" /><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-800">{item.displayName || item.email || "Unnamed user"}</p>{item.displayName && item.email && <p className="truncate text-xs text-slate-400">{item.email}</p>}</div><span className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-bold uppercase ${item.hasToken ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>{item.hasToken ? "Notifications ready" : "No device token"}</span></div><p className="mt-2 text-[11px] text-slate-500">{[item.deviceName, item.deviceModel, item.systemVersion && `iOS ${item.systemVersion}`, item.appVersion && `App ${item.appVersion}${item.appBuild ? ` (${item.appBuild})` : ""}`].filter(Boolean).join(" · ") || "Device and app details will appear after this user opens the next app version."}</p><p className="mt-1 text-[10px] text-slate-400">{item.registeredAt ? `Registered ${new Date(item.registeredAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}` : "No recent registration time"}</p></div></label>)}{!filtered.length && <p className="py-12 text-center text-sm text-slate-500">No users match your search.</p>}</div>}</div>
+        <footer className="flex items-center justify-between border-t border-slate-200 px-6 py-4"><p className="text-xs text-slate-500">{selected.size} selected · {eligible.length} notification-ready · {items.length} total users</p><button type="button" onClick={onClose} className="rounded-xl bg-[#5285f7] px-5 py-2.5 text-xs font-semibold text-white">Done</button></footer>
+      </section>
+    </div>
   );
 }
 
