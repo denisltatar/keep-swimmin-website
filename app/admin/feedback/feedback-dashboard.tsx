@@ -584,9 +584,10 @@ export function FeedbackDashboard() {
   return (
     <main className={`feedback-admin fixed inset-0 z-50 flex overflow-hidden bg-[#f7f9fc] text-slate-900 ${darkTheme ? "dark-mode" : ""}`}>
       <aside aria-hidden={!sidebarOpen} className={`flex shrink-0 flex-col overflow-hidden bg-white transition-[width,padding,border] duration-200 ${sidebarOpen ? "w-[248px] border-r border-slate-200/80 px-4 py-5" : "w-0 border-r-0 px-0 py-5"}`}>
-        <div className="flex items-center gap-3 px-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#5285f7] text-lg font-black text-white shadow-lg shadow-blue-200">K</div>
-          <div><p className="text-[15px] font-bold">Keep Swimmin&apos;</p><p className="text-xs text-slate-400">Admin portal</p></div>
+        <div className="flex items-center gap-2 px-2">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#5285f7] text-lg font-black text-white shadow-lg shadow-blue-200">K</div>
+          <div className="min-w-0 flex-1"><p className="truncate text-[15px] font-bold">Keep Swimmin&apos;</p><p className="text-xs text-slate-400">Admin portal</p></div>
+          <button onClick={toggleSidebar} aria-label="Hide sidebar" title="Hide sidebar" className="shrink-0 rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"><PanelLeftClose className="h-4 w-4" /></button>
         </div>
 
         <nav className="mt-8 space-y-1 text-sm font-medium">
@@ -616,7 +617,7 @@ export function FeedbackDashboard() {
 
       <section className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-[72px] shrink-0 items-center justify-between border-b border-slate-200/80 bg-white px-7">
-          <div className="flex min-w-0 items-center gap-3"><button onClick={toggleSidebar} aria-label={sidebarOpen ? "Hide sidebar" : "Show sidebar"} title={sidebarOpen ? "Hide sidebar" : "Show sidebar"} className="shrink-0 rounded-xl border border-slate-200 bg-white p-2.5 text-slate-500 transition hover:bg-slate-50">{sidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}</button><div className="min-w-0"><div className="flex items-center gap-2"><h1 className="text-lg font-bold">Feedback Hub</h1><span className="rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-extrabold tracking-wider text-[#5285f7]">BETA</span></div><p className="text-xs text-slate-400">Listen, respond, and shape what comes next.</p></div></div>
+          <div className="flex min-w-0 items-center gap-3">{!sidebarOpen && <button onClick={toggleSidebar} aria-label="Show sidebar" title="Show sidebar" className="shrink-0 rounded-xl border border-slate-200 bg-white p-2.5 text-slate-500 transition hover:bg-slate-50"><PanelLeftOpen className="h-4 w-4" /></button>}<div className="min-w-0"><div className="flex items-center gap-2"><h1 className="text-lg font-bold">Feedback Hub</h1><span className="rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-extrabold tracking-wider text-[#5285f7]">BETA</span></div><p className="text-xs text-slate-400">Listen, respond, and shape what comes next.</p></div></div>
           <div className="flex items-center gap-2">
             <div className="flex items-center rounded-xl border border-slate-200 bg-slate-100 p-1" aria-label="Dashboard view">
               <button onClick={() => changeView("list")} aria-pressed={dashboardView === "list"} className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${dashboardView === "list" ? "bg-white text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}><List className="h-3.5 w-3.5" />List</button>
