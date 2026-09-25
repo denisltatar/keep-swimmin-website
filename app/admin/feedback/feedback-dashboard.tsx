@@ -26,7 +26,6 @@ import { deleteObject, ref } from "firebase/storage";
 import { httpsCallable } from "firebase/functions";
 import { firebaseFunctions, firebaseStorage, firestore, getFirebaseAuth } from "@/lib/firebase-client";
 import {
-  Bell,
   Bug,
   ChevronDown,
   ChevronLeft,
@@ -504,8 +503,7 @@ export function FeedbackDashboard() {
             </div>
             <button onClick={() => { setAdminMode((enabled) => !enabled); setActionsMenu(false); setStatusMenu(false); }} aria-pressed={adminMode} title={adminMode ? "Disable editing controls" : "Enable editing controls"} className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-semibold transition ${adminMode ? "border-amber-300 bg-amber-50 text-amber-700" : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"}`}>{adminMode ? <ShieldCheck className="h-4 w-4" /> : <Shield className="h-4 w-4" />}{adminMode ? "Admin on" : "Admin off"}</button>
             <button onClick={toggleTheme} aria-label={darkTheme ? "Use light theme" : "Use dark theme"} title={darkTheme ? "Use light theme" : "Use dark theme"} className="rounded-xl border border-slate-200 bg-white p-2.5 text-slate-500 transition hover:bg-slate-50">{darkTheme ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</button>
-            <button disabled={!adminMode} onClick={() => { setBroadcastOpen(true); setBroadcastResult(""); }} aria-label="Send a notification" title={adminMode ? "Send a notification" : "Enable Admin mode first"} className="relative rounded-xl border border-slate-200 bg-white p-2.5 text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 disabled:opacity-55"><Bell className="h-4 w-4" /></button>
-            <button disabled title="Coming soon" className="cursor-not-allowed rounded-xl border border-slate-200 bg-slate-100 px-4 py-2.5 text-xs font-semibold text-slate-400 opacity-55">Export feedback</button>
+            <button disabled={!adminMode} onClick={() => { setBroadcastOpen(true); setBroadcastResult(""); }} title={adminMode ? "Write a notification for your users" : "Enable Admin mode first"} className="flex items-center gap-2 rounded-xl bg-[#5285f7] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"><Send className="h-3.5 w-3.5" />Send notification</button>
           </div>
         </header>
 
