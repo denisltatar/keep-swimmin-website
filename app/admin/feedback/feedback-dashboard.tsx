@@ -96,6 +96,20 @@ type BroadcastHistoryItem = {
   sentAt?: Date;
   successCount: number;
   failureCount: number;
+  recipients: BroadcastRecipient[];
+};
+
+type BroadcastRecipient = {
+  userID: string;
+  displayName: string;
+  email: string;
+  deviceName: string;
+  deviceModel: string;
+  systemVersion: string;
+  appVersion: string;
+  appBuild: string;
+  status: "accepted" | "failed";
+  errorCode: string;
 };
 
 const statuses: Status[] = ["Submitted", "Reviewing", "Planned", "In Progress", "Fixed"];
@@ -299,6 +313,7 @@ export function FeedbackDashboard() {
           sentAt: value.createdAt?.toDate?.() as Date | undefined,
           successCount: typeof value.successCount === "number" ? value.successCount : 0,
           failureCount: typeof value.failureCount === "number" ? value.failureCount : 0,
+          recipients: Array.isArray(value.recipients) ? value.recipients.map(normalizeBroadcastRecipient) : [],
         };
       }));
     }, (error) => setDataError(error.message));
@@ -494,7 +509,7 @@ export function FeedbackDashboard() {
       >(firebaseFunctions, "sendAdminBroadcast");
       const response = await send({ body, ...(actionURL ? { actionURL } : {}) });
       setBroadcastResult(
-        `Sent to ${response.data.successCount} device${response.data.successCount === 1 ? "" : "s"}` +
+        `Accepted by ${response.data.successCount} device${response.data.successCount === 1 ? "" : "s"}` +
         (response.data.failureCount ? `; ${response.data.failureCount} could not be reached.` : "."),
       );
       setBroadcastBody("");
@@ -659,6 +674,22 @@ export function FeedbackDashboard() {
   );
 }
 
+function normalizeBroadcastRecipient(value: Record<string, unknown>): BroadcastRecipient {
+  const text = (key: string) => typeof value[key] === "string" ? value[key] as string : "";
+  return {
+    userID: text("userID"),
+    displayName: text("displayName"),
+    email: text("email"),
+    deviceName: text("deviceName"),
+    deviceModel: text("deviceModel"),
+    systemVersion: text("systemVersion"),
+    appVersion: text("appVersion"),
+    appBuild: text("appBuild"),
+    status: value.status === "failed" ? "failed" : "accepted",
+    errorCode: text("errorCode"),
+  };
+}
+
 function BroadcastHistoryModal({ items, onClose }: { items: BroadcastHistoryItem[]; onClose: () => void }) {
   return (
     <div className="absolute inset-0 z-50 grid place-items-center bg-slate-950/30 p-6 backdrop-blur-sm">
@@ -672,7 +703,7 @@ function BroadcastHistoryModal({ items, onClose }: { items: BroadcastHistoryItem
           <button type="button" onClick={onClose} aria-label="Close" className="rounded-xl p-2 text-slate-400 hover:bg-slate-100"><X className="h-5 w-5" /></button>
         </header>
         <div className="overflow-y-auto p-6">
-          {items.length === 0 ? <p className="rounded-xl bg-slate-50 p-6 text-center text-sm text-slate-500">No sent messages yet.</p> : <div className="space-y-3">{items.map((item) => <article key={item.id} className="rounded-xl border border-slate-200 p-4"><div className="flex items-center justify-between gap-3"><time className="text-[11px] font-semibold text-slate-500">{item.sentAt ? item.sentAt.toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : "Sending…"}</time><span className="text-[10px] text-slate-400">{item.successCount} delivered{item.failureCount ? ` · ${item.failureCount} failed` : ""}</span></div><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">{item.body}</p></article>)}</div>}
+          {items.length === 0 ? <p className="rounded-xl bg-slate-50 p-6 text-center text-sm text-slate-500">No sent messages yet.</p> : <div className="space-y-3">{items.map((item) => <article key={item.id} className="rounded-xl border border-slate-200 p-4"><div className="flex items-center justify-between gap-3"><time className="text-[11px] font-semibold text-slate-500">{item.sentAt ? item.sentAt.toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : "Sending…"}</time><span className="text-[10px] text-slate-400">{item.successCount} accepted{item.failureCount ? ` · ${item.failureCount} failed` : ""}</span></div><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">{item.body}</p>{item.recipients.length > 0 ? <details className="mt-3 border-t border-slate-100 pt-3"><summary className="cursor-pointer text-xs font-semibold text-[#5285f7]">View {item.recipients.length} recipient results</summary><div className="mt-3 space-y-2">{item.recipients.map((recipient, index) => <div key={`${recipient.userID}-${index}`} className="rounded-lg bg-slate-50 p-3"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-xs font-semibold text-slate-700">{recipient.displayName || recipient.email || "Unknown user"}</p>{recipient.displayName && recipient.email && <p className="truncate text-[10px] text-slate-400">{recipient.email}</p>}</div><span className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-bold uppercase ${recipient.status === "accepted" ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>{recipient.status}</span></div><p className="mt-1 text-[10px] text-slate-500">{[recipient.deviceName, recipient.deviceModel, recipient.systemVersion && `iOS ${recipient.systemVersion}`, recipient.appVersion && `App ${recipient.appVersion}${recipient.appBuild ? ` (${recipient.appBuild})` : ""}`].filter(Boolean).join(" · ") || "Device details unavailable until the user opens the next app version."}</p>{recipient.errorCode && <p className="mt-1 text-[10px] font-medium text-rose-600">{recipient.errorCode}</p>}</div>)}</div></details> : <p className="mt-3 border-t border-slate-100 pt-3 text-[10px] text-slate-400">Recipient details were not recorded for this earlier broadcast.</p>}</article>)}</div>}
         </div>
       </section>
     </div>
