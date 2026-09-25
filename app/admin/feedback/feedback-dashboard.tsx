@@ -36,6 +36,7 @@ import {
   Ellipsis,
   Image as ImageIcon,
   Inbox,
+  History,
   LayoutDashboard,
   Lightbulb,
   List,
@@ -87,6 +88,14 @@ type FeedbackComment = {
   initials: string;
   time: string;
   isOfficial: boolean;
+};
+
+type BroadcastHistoryItem = {
+  id: string;
+  body: string;
+  sentAt?: Date;
+  successCount: number;
+  failureCount: number;
 };
 
 const statuses: Status[] = ["Submitted", "Reviewing", "Planned", "In Progress", "Fixed"];
@@ -158,6 +167,8 @@ export function FeedbackDashboard() {
   const [broadcastBody, setBroadcastBody] = useState("");
   const [sendingBroadcast, setSendingBroadcast] = useState(false);
   const [broadcastResult, setBroadcastResult] = useState("");
+  const [broadcastHistoryOpen, setBroadcastHistoryOpen] = useState(false);
+  const [broadcastHistory, setBroadcastHistory] = useState<BroadcastHistoryItem[]>([]);
 
   useEffect(() => {
     const saved = window.localStorage.getItem("feedback-hub-theme");
@@ -271,6 +282,27 @@ export function FeedbackDashboard() {
       setLoadingComments(false);
     });
   }, [selectedId, user]);
+
+  useEffect(() => {
+    if (!user || !isAdmin || !broadcastHistoryOpen) return;
+    const historyQuery = firestoreQuery(
+      collection(firestore, "adminBroadcasts"),
+      orderBy("createdAt", "desc"),
+      limit(30),
+    );
+    return onSnapshot(historyQuery, (snapshot) => {
+      setBroadcastHistory(snapshot.docs.map((snapshotDoc) => {
+        const value = snapshotDoc.data();
+        return {
+          id: snapshotDoc.id,
+          body: typeof value.body === "string" ? value.body : "",
+          sentAt: value.createdAt?.toDate?.() as Date | undefined,
+          successCount: typeof value.successCount === "number" ? value.successCount : 0,
+          failureCount: typeof value.failureCount === "number" ? value.failureCount : 0,
+        };
+      }));
+    }, (error) => setDataError(error.message));
+  }, [broadcastHistoryOpen, isAdmin, user]);
 
   const filteredPosts = useMemo(() => {
     const clean = query.trim().toLowerCase();
@@ -522,6 +554,7 @@ export function FeedbackDashboard() {
             </div>
             <button onClick={() => { setAdminMode((enabled) => !enabled); setActionsMenu(false); setStatusMenu(false); }} aria-pressed={adminMode} title={adminMode ? "Disable editing controls" : "Enable editing controls"} className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-semibold transition ${adminMode ? "border-amber-300 bg-amber-50 text-amber-700" : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"}`}>{adminMode ? <ShieldCheck className="h-4 w-4" /> : <Shield className="h-4 w-4" />}{adminMode ? "Admin on" : "Admin off"}</button>
             <button onClick={toggleTheme} aria-label={darkTheme ? "Use light theme" : "Use dark theme"} title={darkTheme ? "Use light theme" : "Use dark theme"} className="rounded-xl border border-slate-200 bg-white p-2.5 text-slate-500 transition hover:bg-slate-50">{darkTheme ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</button>
+            <button disabled={!adminMode} onClick={() => setBroadcastHistoryOpen(true)} title={adminMode ? "View sent notifications" : "Enable Admin mode first"} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 disabled:opacity-55"><History className="h-3.5 w-3.5" />Sent messages</button>
             <button disabled={!adminMode} onClick={() => { setBroadcastOpen(true); setBroadcastResult(""); }} title={adminMode ? "Write a notification for your users" : "Enable Admin mode first"} className="flex items-center gap-2 rounded-xl bg-[#5285f7] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"><Send className="h-3.5 w-3.5" />Send notification</button>
           </div>
         </header>
@@ -609,6 +642,8 @@ export function FeedbackDashboard() {
         </div>}
       </section>
 
+      {broadcastHistoryOpen && <BroadcastHistoryModal items={broadcastHistory} onClose={() => setBroadcastHistoryOpen(false)} />}
+
       {editing && <div className="absolute inset-0 z-50 grid place-items-center bg-slate-950/30 p-6 backdrop-blur-sm"><form onSubmit={saveEdit} className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl"><div className="flex items-center justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#5285f7]">Admin access</p><h2 className="mt-1 text-xl font-bold">Edit feedback post</h2></div><button type="button" onClick={() => setEditing(null)} className="rounded-xl p-2 text-slate-400 hover:bg-slate-100"><X className="h-5 w-5" /></button></div><label className="mt-6 block text-xs font-semibold text-slate-600">Title<input required maxLength={100} value={editing.title} onChange={(event) => setEditing({ ...editing, title: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-50" /></label><label className="mt-4 block text-xs font-semibold text-slate-600">Description<textarea required maxLength={2000} value={editing.body} onChange={(event) => setEditing({ ...editing, body: event.target.value })} className="mt-2 h-32 w-full resize-none rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-50" /></label><label className="mt-4 block text-xs font-semibold text-slate-600">Category<select value={editing.category} onChange={(event) => setEditing({ ...editing, category: event.target.value as Category })} className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm"><option>Feature Idea</option><option>Bug & Problem</option><option>Content & Personalization</option><option>General Feedback</option></select></label><div className="mt-6 flex justify-end gap-2"><button type="button" onClick={() => setEditing(null)} className="rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-500 hover:bg-slate-50">Cancel</button><button className="rounded-xl bg-[#5285f7] px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-blue-200">Save changes</button></div></form></div>}
 
       {broadcastOpen && <div className="absolute inset-0 z-50 grid place-items-center bg-slate-950/30 p-6 backdrop-blur-sm"><form onSubmit={sendBroadcast} className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl"><div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#5285f7]">Everyone with notifications enabled</p><h2 className="mt-1 text-xl font-bold">Send an app update</h2><p className="mt-2 text-xs leading-5 text-slate-500">Write naturally and keep the main point near the beginning. Tapping the notification opens Keep Swimmin’.</p></div><button type="button" onClick={() => setBroadcastOpen(false)} aria-label="Close" className="rounded-xl p-2 text-slate-400 hover:bg-slate-100"><X className="h-5 w-5" /></button></div><div className="mt-5"><div className="flex items-center gap-2 text-xs font-semibold text-slate-600"><BookmarkPlus className="h-3.5 w-3.5 text-[#5285f7]" />Saved messages</div><div className="mt-2 flex flex-wrap gap-2">{broadcastTemplates.map((template) => <button type="button" key={template.label} onClick={() => setBroadcastBody(template.message)} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">{template.label}</button>)}</div></div><label className="mt-5 block text-xs font-semibold text-slate-600">Message<textarea required autoFocus maxLength={500} value={broadcastBody} onChange={(event) => setBroadcastBody(event.target.value)} placeholder="Hey everyone! Denis here…" className="mt-2 h-40 w-full resize-none rounded-xl border border-slate-200 p-3 text-sm leading-6 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-50" /></label><div className="mt-1 text-right text-[10px] text-slate-400">{broadcastBody.length}/500</div><div className="mt-4"><p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Preview</p><div className="notification-preview flex items-start gap-3 rounded-2xl border p-3.5 shadow-sm"><img src="/keep-swimmin-app-icon.png" alt="Keep Swimmin’ app icon" className="h-10 w-10 shrink-0 rounded-[9px]" /><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-3"><p className="notification-preview-app truncate text-[11px] font-semibold">KEEP SWIMMIN’</p><span className="notification-preview-time shrink-0 text-[11px]">now</span></div><p className="notification-preview-body mt-1 whitespace-pre-wrap text-xs leading-5">{broadcastBody.trim() || "Your message will appear here."}</p></div></div></div>{broadcastResult && <p className="mt-4 rounded-xl bg-emerald-50 p-3 text-xs font-semibold text-emerald-700">{broadcastResult}</p>}<div className="mt-6 flex justify-end gap-2"><button type="button" onClick={() => setBroadcastOpen(false)} className="rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-500 hover:bg-slate-50">Close</button><button disabled={!broadcastBody.trim() || sendingBroadcast} className="flex items-center gap-2 rounded-xl bg-[#5285f7] px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-blue-200 disabled:cursor-not-allowed disabled:opacity-45"><Send className="h-3.5 w-3.5" />{sendingBroadcast ? "Sending…" : "Review and send"}</button></div></form></div>}
@@ -621,6 +656,26 @@ export function FeedbackDashboard() {
 
       {mediaViewer && <div onClick={() => setMediaViewer(null)} className="absolute inset-0 z-[70] flex flex-col bg-slate-950/90 p-5 backdrop-blur-md"><div className="mx-auto flex w-full max-w-6xl items-center justify-between text-white"><div><p className="text-xs font-bold">User attachment</p><p className="mt-0.5 text-[10px] text-slate-400">{mediaViewer.index + 1} of {mediaViewer.urls.length}</p></div><button onClick={() => setMediaViewer(null)} aria-label="Close gallery" className="rounded-xl border border-white/15 bg-white/10 p-2.5 transition hover:bg-white/20"><X className="h-5 w-5" /></button></div><div className="relative mx-auto flex min-h-0 w-full max-w-6xl flex-1 items-center justify-center py-5">{mediaViewer.urls.length > 1 && <button onClick={(event) => { event.stopPropagation(); setMediaViewer((viewer) => viewer && ({ ...viewer, index: (viewer.index - 1 + viewer.urls.length) % viewer.urls.length })); }} aria-label="Previous image" className="absolute left-0 z-10 rounded-full border border-white/15 bg-slate-900/70 p-3 text-white backdrop-blur transition hover:bg-slate-800"><ChevronLeft className="h-6 w-6" /></button>}<img onClick={(event) => event.stopPropagation()} src={mediaViewer.urls[mediaViewer.index]} alt={`Attachment ${mediaViewer.index + 1}`} className="max-h-full max-w-full rounded-2xl object-contain shadow-2xl shadow-black/50" />{mediaViewer.urls.length > 1 && <button onClick={(event) => { event.stopPropagation(); setMediaViewer((viewer) => viewer && ({ ...viewer, index: (viewer.index + 1) % viewer.urls.length })); }} aria-label="Next image" className="absolute right-0 z-10 rounded-full border border-white/15 bg-slate-900/70 p-3 text-white backdrop-blur transition hover:bg-slate-800"><ChevronRight className="h-6 w-6" /></button>}</div>{mediaViewer.urls.length > 1 && <div onClick={(event) => event.stopPropagation()} className="mx-auto flex max-w-full gap-2 overflow-x-auto rounded-2xl border border-white/10 bg-white/5 p-2 backdrop-blur">{mediaViewer.urls.map((url, index) => <button key={url} onClick={() => setMediaViewer({ urls: mediaViewer.urls, index })} className={`overflow-hidden rounded-xl border-2 transition ${index === mediaViewer.index ? "border-blue-400 opacity-100" : "border-transparent opacity-50 hover:opacity-90"}`}><img src={url} alt="" className="h-14 w-20 object-cover" /></button>)}</div>}</div>}
     </main>
+  );
+}
+
+function BroadcastHistoryModal({ items, onClose }: { items: BroadcastHistoryItem[]; onClose: () => void }) {
+  return (
+    <div className="absolute inset-0 z-50 grid place-items-center bg-slate-950/30 p-6 backdrop-blur-sm">
+      <section className="flex max-h-[82vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+        <header className="flex items-start justify-between border-b border-slate-200 px-6 py-5">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#5285f7]">Notification history</p>
+            <h2 className="mt-1 text-xl font-bold">Sent messages</h2>
+            <p className="mt-1 text-xs text-slate-500">Your 30 most recent broadcasts, newest first.</p>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close" className="rounded-xl p-2 text-slate-400 hover:bg-slate-100"><X className="h-5 w-5" /></button>
+        </header>
+        <div className="overflow-y-auto p-6">
+          {items.length === 0 ? <p className="rounded-xl bg-slate-50 p-6 text-center text-sm text-slate-500">No sent messages yet.</p> : <div className="space-y-3">{items.map((item) => <article key={item.id} className="rounded-xl border border-slate-200 p-4"><div className="flex items-center justify-between gap-3"><time className="text-[11px] font-semibold text-slate-500">{item.sentAt ? item.sentAt.toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : "Sending…"}</time><span className="text-[10px] text-slate-400">{item.successCount} delivered{item.failureCount ? ` · ${item.failureCount} failed` : ""}</span></div><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">{item.body}</p></article>)}</div>}
+        </div>
+      </section>
+    </div>
   );
 }
 
