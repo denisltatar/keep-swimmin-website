@@ -23,7 +23,8 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { deleteObject, ref } from "firebase/storage";
-import { firebaseStorage, firestore, getFirebaseAuth } from "@/lib/firebase-client";
+import { httpsCallable } from "firebase/functions";
+import { firebaseFunctions, firebaseStorage, firestore, getFirebaseAuth } from "@/lib/firebase-client";
 import {
   Bell,
   Bug,
@@ -43,6 +44,7 @@ import {
   MessageCircle,
   Moon,
   Search,
+  Send,
   Settings,
   Shield,
   ShieldCheck,
@@ -135,6 +137,11 @@ export function FeedbackDashboard() {
   const [darkTheme, setDarkTheme] = useState(false);
   const [officialReply, setOfficialReply] = useState("");
   const [sendingReply, setSendingReply] = useState(false);
+  const [broadcastOpen, setBroadcastOpen] = useState(false);
+  const [broadcastTitle, setBroadcastTitle] = useState("A note from Denis");
+  const [broadcastBody, setBroadcastBody] = useState("");
+  const [sendingBroadcast, setSendingBroadcast] = useState(false);
+  const [broadcastResult, setBroadcastResult] = useState("");
 
   useEffect(() => {
     const saved = window.localStorage.getItem("feedback-hub-theme");
@@ -420,6 +427,34 @@ export function FeedbackDashboard() {
     }
   }
 
+  async function sendBroadcast(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const title = broadcastTitle.trim();
+    const body = broadcastBody.trim();
+    if (!isAdmin || !adminMode || !title || !body || sendingBroadcast) return;
+    if (!window.confirm("Send this notification to every registered device? This cannot be undone.")) return;
+
+    setSendingBroadcast(true);
+    setBroadcastResult("");
+    setDataError("");
+    try {
+      const send = httpsCallable<
+        { title: string; body: string },
+        { targetedDevices: number; successCount: number; failureCount: number }
+      >(firebaseFunctions, "sendAdminBroadcast");
+      const response = await send({ title, body });
+      setBroadcastResult(
+        `Sent to ${response.data.successCount} device${response.data.successCount === 1 ? "" : "s"}` +
+        (response.data.failureCount ? `; ${response.data.failureCount} could not be reached.` : "."),
+      );
+      setBroadcastBody("");
+    } catch (error) {
+      setDataError(error instanceof Error ? error.message : "The notification could not be sent.");
+    } finally {
+      setSendingBroadcast(false);
+    }
+  }
+
   if (!authReady) return <PortalMessage title="Opening Feedback Hub…" body="Checking your secure admin session." />;
   if (!user) return <SignInScreen error={dataError} debug={authDebug} onSignIn={signIn} onResetPassword={resetPassword} />;
   if (!isAdmin) return <PortalMessage title="Admin access required" body={`You’re signed in as ${user.email ?? "this account"}, but this account does not have the Firebase admin permission.`} action={<button onClick={signOutUser} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold">Use another account</button>} />;
@@ -469,7 +504,7 @@ export function FeedbackDashboard() {
             </div>
             <button onClick={() => { setAdminMode((enabled) => !enabled); setActionsMenu(false); setStatusMenu(false); }} aria-pressed={adminMode} title={adminMode ? "Disable editing controls" : "Enable editing controls"} className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-semibold transition ${adminMode ? "border-amber-300 bg-amber-50 text-amber-700" : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"}`}>{adminMode ? <ShieldCheck className="h-4 w-4" /> : <Shield className="h-4 w-4" />}{adminMode ? "Admin on" : "Admin off"}</button>
             <button onClick={toggleTheme} aria-label={darkTheme ? "Use light theme" : "Use dark theme"} title={darkTheme ? "Use light theme" : "Use dark theme"} className="rounded-xl border border-slate-200 bg-white p-2.5 text-slate-500 transition hover:bg-slate-50">{darkTheme ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</button>
-            <button disabled aria-label="Notifications (coming soon)" title="Coming soon" className="relative cursor-not-allowed rounded-xl border border-slate-200 bg-slate-100 p-2.5 text-slate-400 opacity-55"><Bell className="h-4 w-4" /></button>
+            <button disabled={!adminMode} onClick={() => { setBroadcastOpen(true); setBroadcastResult(""); }} aria-label="Send a notification" title={adminMode ? "Send a notification" : "Enable Admin mode first"} className="relative rounded-xl border border-slate-200 bg-white p-2.5 text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 disabled:opacity-55"><Bell className="h-4 w-4" /></button>
             <button disabled title="Coming soon" className="cursor-not-allowed rounded-xl border border-slate-200 bg-slate-100 px-4 py-2.5 text-xs font-semibold text-slate-400 opacity-55">Export feedback</button>
           </div>
         </header>
@@ -558,6 +593,8 @@ export function FeedbackDashboard() {
       </section>
 
       {editing && <div className="absolute inset-0 z-50 grid place-items-center bg-slate-950/30 p-6 backdrop-blur-sm"><form onSubmit={saveEdit} className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl"><div className="flex items-center justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#5285f7]">Admin access</p><h2 className="mt-1 text-xl font-bold">Edit feedback post</h2></div><button type="button" onClick={() => setEditing(null)} className="rounded-xl p-2 text-slate-400 hover:bg-slate-100"><X className="h-5 w-5" /></button></div><label className="mt-6 block text-xs font-semibold text-slate-600">Title<input required maxLength={100} value={editing.title} onChange={(event) => setEditing({ ...editing, title: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-50" /></label><label className="mt-4 block text-xs font-semibold text-slate-600">Description<textarea required maxLength={2000} value={editing.body} onChange={(event) => setEditing({ ...editing, body: event.target.value })} className="mt-2 h-32 w-full resize-none rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-50" /></label><label className="mt-4 block text-xs font-semibold text-slate-600">Category<select value={editing.category} onChange={(event) => setEditing({ ...editing, category: event.target.value as Category })} className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm"><option>Feature Idea</option><option>Bug & Problem</option><option>Content & Personalization</option><option>General Feedback</option></select></label><div className="mt-6 flex justify-end gap-2"><button type="button" onClick={() => setEditing(null)} className="rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-500 hover:bg-slate-50">Cancel</button><button className="rounded-xl bg-[#5285f7] px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-blue-200">Save changes</button></div></form></div>}
+
+      {broadcastOpen && <div className="absolute inset-0 z-50 grid place-items-center bg-slate-950/30 p-6 backdrop-blur-sm"><form onSubmit={sendBroadcast} className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl"><div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#5285f7]">Everyone with notifications enabled</p><h2 className="mt-1 text-xl font-bold">Send an app update</h2><p className="mt-2 text-xs leading-5 text-slate-500">Write naturally and keep the main point near the beginning. Tapping the notification opens Keep Swimmin’.</p></div><button type="button" onClick={() => setBroadcastOpen(false)} aria-label="Close" className="rounded-xl p-2 text-slate-400 hover:bg-slate-100"><X className="h-5 w-5" /></button></div><label className="mt-5 block text-xs font-semibold text-slate-600">Title<input required autoFocus maxLength={60} value={broadcastTitle} onChange={(event) => setBroadcastTitle(event.target.value)} className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-50" /></label><div className="mt-1 text-right text-[10px] text-slate-400">{broadcastTitle.length}/60</div><label className="mt-3 block text-xs font-semibold text-slate-600">Message<textarea required maxLength={500} value={broadcastBody} onChange={(event) => setBroadcastBody(event.target.value)} placeholder="Hey everyone! Denis here…" className="mt-2 h-36 w-full resize-none rounded-xl border border-slate-200 p-3 text-sm leading-6 outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-50" /></label><div className="mt-1 text-right text-[10px] text-slate-400">{broadcastBody.length}/500</div><div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4"><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Preview</p><p className="mt-2 text-sm font-bold text-slate-800">{broadcastTitle.trim() || "Notification title"}</p><p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-slate-600">{broadcastBody.trim() || "Your message will appear here."}</p></div>{broadcastResult && <p className="mt-4 rounded-xl bg-emerald-50 p-3 text-xs font-semibold text-emerald-700">{broadcastResult}</p>}<div className="mt-6 flex justify-end gap-2"><button type="button" onClick={() => setBroadcastOpen(false)} className="rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-500 hover:bg-slate-50">Close</button><button disabled={!broadcastTitle.trim() || !broadcastBody.trim() || sendingBroadcast} className="flex items-center gap-2 rounded-xl bg-[#5285f7] px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-blue-200 disabled:cursor-not-allowed disabled:opacity-45"><Send className="h-3.5 w-3.5" />{sendingBroadcast ? "Sending…" : "Review and send"}</button></div></form></div>}
 
       {editingComment && <div className="absolute inset-0 z-50 grid place-items-center bg-slate-950/30 p-6 backdrop-blur-sm"><form onSubmit={saveCommentEdit} className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"><div className="flex items-center justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#5285f7]">Admin mode</p><h2 className="mt-1 text-xl font-bold">Edit comment</h2></div><button type="button" onClick={() => setEditingComment(null)} className="rounded-xl p-2 text-slate-400 hover:bg-slate-100"><X className="h-5 w-5" /></button></div><p className="mt-2 text-xs text-slate-400">Comment by {editingComment.author}</p><textarea required autoFocus maxLength={1000} value={editingComment.body} onChange={(event) => setEditingComment({ ...editingComment, body: event.target.value })} className="mt-5 h-36 w-full resize-none rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-blue-300 focus:ring-4 focus:ring-blue-50" /><div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setEditingComment(null)} className="rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-500 hover:bg-slate-50">Cancel</button><button className="rounded-xl bg-[#5285f7] px-5 py-2.5 text-xs font-semibold text-white">Save comment</button></div></form></div>}
 
