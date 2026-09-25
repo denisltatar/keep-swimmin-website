@@ -77,6 +77,23 @@
 .feedback-admin.dark-mode input::placeholder,
 .feedback-admin.dark-mode textarea::placeholder { color: #66758c; }
 
+.feedback-admin .notification-preview {
+  background: rgb(241 245 249 / 0.92);
+  border-color: #d7dee8;
+}
+.feedback-admin .notification-preview-app,
+.feedback-admin .notification-preview-time { color: #64748b; }
+.feedback-admin .notification-preview-title { color: #0f172a; }
+.feedback-admin .notification-preview-body { color: #334155; }
+.feedback-admin.dark-mode .notification-preview {
+  background: #252a32 !important;
+  border-color: #3b4350 !important;
+}
+.feedback-admin.dark-mode .notification-preview-app,
+.feedback-admin.dark-mode .notification-preview-time { color: #aeb7c5 !important; }
+.feedback-admin.dark-mode .notification-preview-title { color: #ffffff !important; }
+.feedback-admin.dark-mode .notification-preview-body { color: #e3e8ef !important; }
+
 /* Dark surfaces and accents used by the feedback dashboard. */
 .feedback-admin.dark-mode [class*="bg-blue-50"] { background-color: #122443 !important; }
 .feedback-admin.dark-mode [class*="bg-[#f4f7ff]"] { background-color: #101f39 !important; }
