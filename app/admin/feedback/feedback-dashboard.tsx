@@ -56,7 +56,7 @@ import {
   X,
 } from "lucide-react";
 
-type Status = "Submitted" | "Reviewing" | "Planned" | "In Progress" | "Shipped";
+type Status = "Submitted" | "Reviewing" | "Planned" | "In Progress" | "Fixed";
 type Category = "Feature Idea" | "Bug & Problem" | "Content & Personalization" | "General Feedback";
 type DashboardView = "list" | "board";
 
@@ -87,7 +87,7 @@ type FeedbackComment = {
   isOfficial: boolean;
 };
 
-const statuses: Status[] = ["Submitted", "Reviewing", "Planned", "In Progress", "Shipped"];
+const statuses: Status[] = ["Submitted", "Reviewing", "Planned", "In Progress", "Fixed"];
 const adminEmailAllowlist = new Set([
   "denis.tatar8@gmail.com",
   "developer@thoughtfulcode.io",
@@ -99,7 +99,7 @@ const statusStyle: Record<Status, string> = {
   Reviewing: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
   Planned: "bg-violet-50 text-violet-700 ring-1 ring-violet-200",
   "In Progress": "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
-  Shipped: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
+  Fixed: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
 };
 
 const categoryIcon = {
@@ -269,17 +269,18 @@ export function FeedbackDashboard() {
     if (!postId || !isAdmin) return;
     const post = posts.find((candidate) => candidate.id === postId);
     if (
-      status === "Shipped" &&
-      post?.status !== "Shipped" &&
+      status === "Fixed" &&
+      post?.status !== "Fixed" &&
       !window.confirm(
-        "Mark this feedback as shipped? The author and supporters will receive a push notification telling them to update the app.",
+        "Mark this feedback as fixed? The author and supporters will be told that an update is ready.",
       )
     ) {
       return;
     }
     setDataError("");
     try {
-      await updateDoc(doc(firestore, "communityPosts", postId), { status, updatedAt: serverTimestamp() });
+      const storedStatus = status === "Fixed" ? "Shipped" : status;
+      await updateDoc(doc(firestore, "communityPosts", postId), { status: storedStatus, updatedAt: serverTimestamp() });
       await recordAction("update_status", postId);
       setStatusMenu(false);
     } catch (error) {
@@ -508,11 +509,11 @@ export function FeedbackDashboard() {
                 <Metric label="Total feedback" value={posts.length.toString()} detail="All time" />
                 <Metric label="Needs review" value={posts.filter((p) => p.status === "Submitted").length.toString()} detail="New arrivals" accent />
                 <Metric label="In progress" value={posts.filter((p) => p.status === "In Progress").length.toString()} detail="Active work" />
-                <Metric label="Shipped" value={posts.filter((p) => p.status === "Shipped").length.toString()} detail="Closed loop" />
+                <Metric label="Fixed" value={posts.filter((p) => p.status === "Fixed").length.toString()} detail="Ready for users" />
               </div>
               <div className="mt-5 flex items-center gap-3">
                 <label className="relative flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search feedback, people, or keywords…" className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-xs outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-50" /></label>
-                <label className="relative"><select value={activeFilter} onChange={(event) => setActiveFilter(event.target.value)} className="h-10 appearance-none rounded-xl border border-slate-200 bg-white pl-3 pr-9 text-xs font-medium outline-none"><option>All feedback</option><option>Feature Idea</option><option>Bug & Problem</option><option>Content & Personalization</option><option>General Feedback</option><option>Submitted</option><option>Reviewing</option><option>Planned</option><option>In Progress</option><option>Shipped</option></select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" /></label>
+                <label className="relative"><select value={activeFilter} onChange={(event) => setActiveFilter(event.target.value)} className="h-10 appearance-none rounded-xl border border-slate-200 bg-white pl-3 pr-9 text-xs font-medium outline-none"><option>All feedback</option><option>Feature Idea</option><option>Bug & Problem</option><option>Content & Personalization</option><option>General Feedback</option><option>Submitted</option><option>Reviewing</option><option>Planned</option><option>In Progress</option><option>Fixed</option></select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" /></label>
               </div>
             </div>
 
@@ -529,7 +530,7 @@ export function FeedbackDashboard() {
               <div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Conversation</p><h2 className="mt-2 text-xl font-bold leading-tight">{selected.title}</h2></div><div className="relative"><button disabled={!adminMode} onClick={() => setActionsMenu((open) => !open)} aria-label={adminMode ? "More actions" : "Enable admin mode to edit"} title={adminMode ? "Post actions" : "Enable Admin mode first"} className="rounded-lg border border-slate-200 p-2 text-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-35"><Ellipsis className="h-4 w-4" /></button>{actionsMenu && <div className="absolute right-0 z-20 mt-2 w-40 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl"><button onClick={() => { setEditing(selected); setActionsMenu(false); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium hover:bg-slate-50"><Pencil className="h-3.5 w-3.5" />Edit post</button><button onClick={() => setConfirmDelete(true)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium text-rose-600 hover:bg-rose-50"><Trash2 className="h-3.5 w-3.5" />Delete post</button></div>}</div></div>
               <div className="mt-4 flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 text-[11px] font-bold text-blue-700">{selected.initials}</div><div><p className="text-xs font-semibold">{selected.author}</p><p className="text-[11px] text-slate-400">{selected.time} · {selected.version}</p></div></div>
               <div className="mt-4 grid grid-cols-2 gap-2">
-                <div className="relative"><p className="mb-1.5 text-[9px] font-bold uppercase tracking-wider text-slate-400">Status</p><button disabled={!adminMode} onClick={() => setStatusMenu((open) => !open)} title={adminMode ? "Change ticket status" : "Enable Admin mode to change status"} className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-65 ${statusStyle[selected.status]}`}><span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-current opacity-70" />{selected.status}</span><ChevronDown className="mr-0.5 h-4 w-4 shrink-0" /></button>{statusMenu && <div className="absolute z-20 mt-2 w-full rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">{statuses.map((status) => <button key={status} onClick={() => updateStatus(status)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium hover:bg-slate-50"><span className={`h-2 w-2 rounded-full ${status === "Shipped" ? "bg-emerald-500" : status === "In Progress" ? "bg-blue-500" : status === "Planned" ? "bg-violet-500" : status === "Reviewing" ? "bg-amber-500" : "bg-slate-400"}`} />{status}</button>)}</div>}</div>
+                <div className="relative"><p className="mb-1.5 text-[9px] font-bold uppercase tracking-wider text-slate-400">Status</p><button disabled={!adminMode} onClick={() => setStatusMenu((open) => !open)} title={adminMode ? "Change ticket status" : "Enable Admin mode to change status"} className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-65 ${statusStyle[selected.status]}`}><span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-current opacity-70" />{selected.status}</span><ChevronDown className="mr-0.5 h-4 w-4 shrink-0" /></button>{statusMenu && <div className="absolute z-20 mt-2 w-full rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">{statuses.map((status) => <button key={status} onClick={() => updateStatus(status)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium hover:bg-slate-50"><span className={`h-2 w-2 rounded-full ${status === "Fixed" ? "bg-emerald-500" : status === "In Progress" ? "bg-blue-500" : status === "Planned" ? "bg-violet-500" : status === "Reviewing" ? "bg-amber-500" : "bg-slate-400"}`} />{status}</button>)}</div>}</div>
                 <label><span className="mb-1.5 block text-[9px] font-bold uppercase tracking-wider text-slate-400">Ticket type</span><span className="relative block"><select disabled={!adminMode} value={selected.category} onChange={(event) => void updateCategory(event.target.value as Category)} title={adminMode ? "Change ticket type" : "Enable Admin mode to change type"} className="h-[42px] w-full appearance-none rounded-xl border border-slate-200 bg-white pl-3 pr-9 text-[10px] font-semibold outline-none disabled:cursor-not-allowed disabled:opacity-65">{categories.map((category) => <option key={category}>{category}</option>)}</select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" /></span></label>
               </div>
             </div>
@@ -784,7 +785,7 @@ function BoardTicketDrawer({
             <div className="flex items-start justify-between gap-4">
               <div className="relative flex-1">
                 <button disabled={!canManage} onClick={() => setStatusOpen((open) => !open)} title={canManage ? "Change ticket status" : "Enable Admin mode to change status"} className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-65 ${statusStyle[post.status]}`}><span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-current opacity-70" />{post.status}</span><ChevronDown className="mr-0.5 h-4 w-4 shrink-0" /></button>
-                {statusOpen && <div className="absolute z-20 mt-2 w-full rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">{statuses.map((status) => <button key={status} onClick={() => { setStatusOpen(false); void onUpdateStatus(status); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium hover:bg-slate-50"><span className={`h-2 w-2 rounded-full ${status === "Shipped" ? "bg-emerald-500" : status === "In Progress" ? "bg-blue-500" : status === "Planned" ? "bg-violet-500" : status === "Reviewing" ? "bg-amber-500" : "bg-slate-400"}`} />{status}</button>)}</div>}
+                {statusOpen && <div className="absolute z-20 mt-2 w-full rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">{statuses.map((status) => <button key={status} onClick={() => { setStatusOpen(false); void onUpdateStatus(status); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium hover:bg-slate-50"><span className={`h-2 w-2 rounded-full ${status === "Fixed" ? "bg-emerald-500" : status === "In Progress" ? "bg-blue-500" : status === "Planned" ? "bg-violet-500" : status === "Reviewing" ? "bg-amber-500" : "bg-slate-400"}`} />{status}</button>)}</div>}
               </div>
               <label className="relative mt-0.5 w-[190px] shrink-0"><select disabled={!canManage} value={post.category} onChange={(event) => void onUpdateCategory(event.target.value as Category)} title={canManage ? "Change ticket type" : "Enable Admin mode to change type"} className="h-[42px] w-full appearance-none rounded-xl border border-slate-200 bg-white pl-9 pr-8 text-[10px] font-semibold outline-none disabled:cursor-not-allowed disabled:opacity-65">{categories.map((category) => <option key={category}>{category}</option>)}</select><Icon className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" /><ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" /></label>
             </div>
@@ -867,7 +868,8 @@ function normalizeCategory(value: unknown): Category {
 }
 
 function normalizeStatus(value: unknown): Status {
-  if (value === "Reviewing" || value === "Planned" || value === "In Progress" || value === "Shipped") return value;
+  if (value === "Shipped" || value === "Fixed") return "Fixed";
+  if (value === "Reviewing" || value === "Planned" || value === "In Progress") return value;
   return "Submitted";
 }
 
