@@ -205,6 +205,7 @@ export function FeedbackDashboard() {
   const [broadcastAudience, setBroadcastAudience] = useState<BroadcastAudienceMember[]>([]);
   const [selectedRecipientIDs, setSelectedRecipientIDs] = useState<Set<string>>(new Set());
   const [loadingAudience, setLoadingAudience] = useState(false);
+  const [recipientFirstNames, setRecipientFirstNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const saved = window.localStorage.getItem("feedback-hub-theme");
@@ -351,6 +352,8 @@ export function FeedbackDashboard() {
     >(firebaseFunctions, "listBroadcastAudience");
     void loadAudience({}).then((response) => {
       setBroadcastAudience(response.data.users);
+      const savedNames = JSON.parse(window.localStorage.getItem("broadcast-recipient-first-names") || "{}") as Record<string, string>;
+      setRecipientFirstNames((current) => Object.fromEntries(response.data.users.map((member) => [member.userID, current[member.userID] || savedNames[member.userID] || suggestedFirstName(member)])));
     }).catch((error) => {
       setDataError(error instanceof Error ? error.message : "The audience could not be loaded.");
     }).finally(() => setLoadingAudience(false));
@@ -367,7 +370,7 @@ export function FeedbackDashboard() {
 
   const selected = posts.find((post) => post.id === selectedId) ?? filteredPosts[0] ?? posts[0];
   const selectedAudience = broadcastAudience.filter((member) => selectedRecipientIDs.has(member.userID));
-  const previewFirstName = (selectedAudience[0]?.displayName || selectedAudience[0]?.email?.split("@")[0] || "there").trim().split(/\s+/)[0].slice(0, 15);
+  const previewFirstName = selectedAudience[0] ? recipientFirstNames[selectedAudience[0].userID] || suggestedFirstName(selectedAudience[0]) : "there";
   const previewBroadcastBody = broadcastBody.replaceAll("{firstName}", previewFirstName || "there");
 
   async function recordAction(action: string, postID: string) {
@@ -544,10 +547,10 @@ export function FeedbackDashboard() {
     setDataError("");
     try {
       const send = httpsCallable<
-        { body: string; actionURL?: string; recipientIDs: string[] },
+        { body: string; actionURL?: string; recipientIDs: string[]; recipientNames: Record<string, string> },
         { targetedDevices: number; successCount: number; failureCount: number }
       >(firebaseFunctions, "sendAdminBroadcast");
-      const response = await send({ body, recipientIDs: [...selectedRecipientIDs], ...(actionURL ? { actionURL } : {}) });
+      const response = await send({ body, recipientIDs: [...selectedRecipientIDs], recipientNames: Object.fromEntries([...selectedRecipientIDs].map((userID) => [userID, recipientFirstNames[userID] || "there"])), ...(actionURL ? { actionURL } : {}) });
       setBroadcastResult(
         `Accepted by ${response.data.successCount} device${response.data.successCount === 1 ? "" : "s"}` +
         (response.data.failureCount ? `; ${response.data.failureCount} could not be reached.` : "."),
@@ -697,7 +700,7 @@ export function FeedbackDashboard() {
         </div>}
       </section>
 
-      {audienceOpen && <BroadcastAudienceModal items={broadcastAudience} selected={selectedRecipientIDs} loading={loadingAudience} onChange={setSelectedRecipientIDs} onClose={() => setAudienceOpen(false)} />}
+      {audienceOpen && <BroadcastAudienceModal items={broadcastAudience} selected={selectedRecipientIDs} firstNames={recipientFirstNames} loading={loadingAudience} onChange={setSelectedRecipientIDs} onFirstNameChange={(userID, firstName) => { const next = { ...recipientFirstNames, [userID]: firstName }; setRecipientFirstNames(next); window.localStorage.setItem("broadcast-recipient-first-names", JSON.stringify(next)); }} onClose={() => setAudienceOpen(false)} />}
 
       {broadcastHistoryOpen && <BroadcastHistoryModal items={broadcastHistory} onClose={() => setBroadcastHistoryOpen(false)} />}
 
@@ -716,7 +719,13 @@ export function FeedbackDashboard() {
   );
 }
 
-function BroadcastAudienceModal({ items, selected, loading, onChange, onClose }: { items: BroadcastAudienceMember[]; selected: Set<string>; loading: boolean; onChange: (value: Set<string>) => void; onClose: () => void }) {
+function suggestedFirstName(member: BroadcastAudienceMember) {
+  const source = member.displayName || member.email.split("@")[0] || "there";
+  const firstPart = source.trim().split(/[\s._-]+/)[0].replace(/\d+$/g, "");
+  return firstPart ? firstPart.charAt(0).toUpperCase() + firstPart.slice(1).toLowerCase() : "there";
+}
+
+function BroadcastAudienceModal({ items, selected, firstNames, loading, onChange, onFirstNameChange, onClose }: { items: BroadcastAudienceMember[]; selected: Set<string>; firstNames: Record<string, string>; loading: boolean; onChange: (value: Set<string>) => void; onFirstNameChange: (userID: string, firstName: string) => void; onClose: () => void }) {
   const [search, setSearch] = useState("");
   const filtered = items.filter((item) => `${item.displayName} ${item.email} ${item.deviceName} ${item.appVersion}`.toLowerCase().includes(search.trim().toLowerCase()));
   const eligible = items.filter((item) => item.hasToken);
@@ -734,7 +743,7 @@ function BroadcastAudienceModal({ items, selected, loading, onChange, onClose }:
           <button type="button" onClick={onClose} aria-label="Close" className="rounded-xl p-2 text-slate-400 hover:bg-slate-100"><X className="h-5 w-5" /></button>
         </header>
         <div className="flex items-center gap-3 border-b border-slate-200 px-6 py-4"><label className="relative flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, email, device, or app version" className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-xs outline-none focus:border-blue-300 focus:bg-white" /></label><button type="button" onClick={() => onChange(new Set(eligible.map((item) => item.userID)))} className="rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-semibold text-slate-600">Select all active</button><button type="button" onClick={() => onChange(new Set())} className="rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-500">Clear</button></div>
-        <div className="overflow-y-auto p-6">{loading ? <p className="py-12 text-center text-sm text-slate-500">Loading users…</p> : <div className="space-y-2">{filtered.map((item) => <label key={item.userID} className={`flex items-start gap-3 rounded-xl border p-4 ${item.hasToken ? "cursor-pointer border-slate-200 hover:border-blue-200 hover:bg-blue-50/40" : "cursor-not-allowed border-slate-100 bg-slate-50 opacity-65"}`}><input type="checkbox" disabled={!item.hasToken} checked={selected.has(item.userID)} onChange={() => toggle(item.userID)} className="mt-1 h-4 w-4 accent-[#5285f7]" /><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-800">{item.displayName || item.email || "Unnamed user"}</p>{item.displayName && item.email && <p className="truncate text-xs text-slate-400">{item.email}</p>}</div><span className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-bold uppercase ${item.hasToken ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>{item.hasToken ? "Notifications ready" : "No device token"}</span></div><p className="mt-2 text-[11px] text-slate-500">{[item.deviceName, item.deviceModel, item.systemVersion && `iOS ${item.systemVersion}`, item.appVersion && `App ${item.appVersion}${item.appBuild ? ` (${item.appBuild})` : ""}`].filter(Boolean).join(" · ") || "Device and app details will appear after this user opens the next app version."}</p><p className="mt-1 text-[10px] text-slate-400">{item.registeredAt ? `Registered ${new Date(item.registeredAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}` : "No recent registration time"}</p></div></label>)}{!filtered.length && <p className="py-12 text-center text-sm text-slate-500">No users match your search.</p>}</div>}</div>
+        <div className="overflow-y-auto p-6">{loading ? <p className="py-12 text-center text-sm text-slate-500">Loading users…</p> : <div className="space-y-2">{filtered.map((item) => <div key={item.userID} className={`flex items-start gap-3 rounded-xl border p-4 ${item.hasToken ? "border-slate-200 hover:border-blue-200 hover:bg-blue-50/40" : "border-slate-100 bg-slate-50 opacity-65"}`}><input type="checkbox" disabled={!item.hasToken} checked={selected.has(item.userID)} onChange={() => toggle(item.userID)} className="mt-1 h-4 w-4 accent-[#5285f7]" /><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-800">{item.displayName || item.email || "Unnamed user"}</p>{item.displayName && item.email && <p className="truncate text-xs text-slate-400">{item.email}</p>}</div><span className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-bold uppercase ${item.hasToken ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>{item.hasToken ? "Notifications ready" : "No device token"}</span></div>{item.hasToken && <label className="mt-3 flex items-center gap-2 text-[10px] font-semibold text-slate-500"><span className="shrink-0">First name used</span><input maxLength={15} value={firstNames[item.userID] || suggestedFirstName(item)} onChange={(event) => onFirstNameChange(item.userID, event.target.value.replace(/[^\p{L}'’-]/gu, "").slice(0, 15))} className="h-8 max-w-40 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-700 outline-none focus:border-blue-300" /></label>}<p className="mt-2 text-[11px] text-slate-500">{[item.deviceName, item.deviceModel, item.systemVersion && `iOS ${item.systemVersion}`, item.appVersion && `App ${item.appVersion}${item.appBuild ? ` (${item.appBuild})` : ""}`].filter(Boolean).join(" · ") || "Device and app details will appear after this user opens the next app version."}</p><p className="mt-1 text-[10px] text-slate-400">{item.registeredAt ? `Registered ${new Date(item.registeredAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}` : "No recent registration time"}</p></div></div>)}{!filtered.length && <p className="py-12 text-center text-sm text-slate-500">No users match your search.</p>}</div>}</div>
         <footer className="flex items-center justify-between border-t border-slate-200 px-6 py-4"><p className="text-xs text-slate-500">{selected.size} selected · {eligible.length} notification-ready · {items.length} total users</p><button type="button" onClick={onClose} className="rounded-xl bg-[#5285f7] px-5 py-2.5 text-xs font-semibold text-white">Done</button></footer>
       </section>
     </div>
