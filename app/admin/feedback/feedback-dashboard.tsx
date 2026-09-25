@@ -98,15 +98,18 @@ const categories: Category[] = ["Feature Idea", "Bug & Problem", "Content & Pers
 const broadcastTemplates = [
   {
     label: "New update",
-    message: "A new Keep Swimmin’ update is available! Open the App Store to update and enjoy the latest improvements. Thank you for being part of the Keep Swimmin’ community!",
+    message: "A new Keep Swimmin’ update is available! Tap to update and enjoy the latest improvements. Thank you for being part of the Keep Swimmin’ community!",
+    actionURL: "https://apps.apple.com/app/id6761438239",
   },
   {
     label: "Feedback Hub",
     message: "Hey everyone, Denis here! Have an idea or found a problem? Visit Settings > Feedback Hub to tell me about it. I’ll notify you when your issue is fixed. Thanks for helping me make the app better!",
+    actionURL: "",
   },
   {
     label: "Thank you",
     message: "Hey everyone, Denis here! Thank you so much for using Keep Swimmin’ and being part of this community. Your support means more to me than you know!",
+    actionURL: "",
   },
 ] as const;
 
@@ -443,6 +446,9 @@ export function FeedbackDashboard() {
   async function sendBroadcast(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const body = broadcastBody.trim();
+    const actionURL = body.startsWith("A new Keep Swimmin’ update is available!")
+      ? "https://apps.apple.com/app/id6761438239"
+      : "";
     if (!isAdmin || !adminMode || !body || sendingBroadcast) return;
     if (!window.confirm("Send this notification to every registered device? This cannot be undone.")) return;
 
@@ -451,10 +457,10 @@ export function FeedbackDashboard() {
     setDataError("");
     try {
       const send = httpsCallable<
-        { body: string },
+        { body: string; actionURL?: string },
         { targetedDevices: number; successCount: number; failureCount: number }
       >(firebaseFunctions, "sendAdminBroadcast");
-      const response = await send({ body });
+      const response = await send({ body, ...(actionURL ? { actionURL } : {}) });
       setBroadcastResult(
         `Sent to ${response.data.successCount} device${response.data.successCount === 1 ? "" : "s"}` +
         (response.data.failureCount ? `; ${response.data.failureCount} could not be reached.` : "."),
