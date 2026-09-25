@@ -83,7 +83,6 @@
 }
 .feedback-admin .notification-preview-app,
 .feedback-admin .notification-preview-time { color: #64748b; }
-.feedback-admin .notification-preview-title { color: #0f172a; }
 .feedback-admin .notification-preview-body { color: #334155; }
 .feedback-admin.dark-mode .notification-preview {
   background: #252a32 !important;
@@ -91,7 +90,6 @@
 }
 .feedback-admin.dark-mode .notification-preview-app,
 .feedback-admin.dark-mode .notification-preview-time { color: #aeb7c5 !important; }
-.feedback-admin.dark-mode .notification-preview-title { color: #ffffff !important; }
 .feedback-admin.dark-mode .notification-preview-body { color: #e3e8ef !important; }
 
 /* Dark surfaces and accents used by the feedback dashboard. */
