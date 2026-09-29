@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   browserLocalPersistence,
   onAuthStateChanged,
@@ -36,6 +36,7 @@ import {
   Ellipsis,
   Image as ImageIcon,
   Inbox,
+  Bell,
   History,
   LayoutDashboard,
   Lightbulb,
@@ -64,6 +65,12 @@ import {
 type Status = "Submitted" | "Reviewing" | "Planned" | "In Progress" | "Fixed";
 type Category = "Feature Idea" | "Bug & Problem" | "Content & Personalization" | "General Feedback";
 type DashboardView = "list" | "board";
+
+type NewPostAlert = {
+  id: string;
+  title: string;
+  author: string;
+};
 
 type FeedbackPost = {
   id: string;
@@ -209,12 +216,16 @@ export function FeedbackDashboard() {
   const [selectedRecipientIDs, setSelectedRecipientIDs] = useState<Set<string>>(new Set());
   const [loadingAudience, setLoadingAudience] = useState(false);
   const [recipientFirstNames, setRecipientFirstNames] = useState<Record<string, string>>({});
+  const [newPostAlert, setNewPostAlert] = useState<NewPostAlert | null>(null);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("default");
+  const postsListenerReady = useRef(false);
 
   useEffect(() => {
     const saved = window.localStorage.getItem("feedback-hub-theme");
     setDarkTheme(saved ? saved === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches);
     setDashboardView(window.localStorage.getItem("feedback-hub-view") === "board" ? "board" : "list");
     setSidebarOpen(window.localStorage.getItem("feedback-hub-sidebar") !== "closed");
+    setNotificationPermission("Notification" in window ? Notification.permission : "unsupported");
   }, []);
 
   useEffect(() => {
@@ -243,6 +254,7 @@ export function FeedbackDashboard() {
     if (!user) return;
     setLoadingPosts(true);
     setDataError("");
+    postsListenerReady.current = false;
     const postsQuery = firestoreQuery(collection(firestore, "communityPosts"), orderBy("createdAt", "desc"), limit(100));
     return onSnapshot(postsQuery, (snapshot) => {
       const livePosts = snapshot.docs.map((snapshotDoc): FeedbackPost => {
@@ -269,6 +281,29 @@ export function FeedbackDashboard() {
           hasOfficialReply: false,
         };
       });
+      if (postsListenerReady.current) {
+        const addedPost = snapshot.docChanges()
+          .filter((change) => change.type === "added")
+          .map((change) => livePosts.find((post) => post.id === change.doc.id))
+          .find((post): post is FeedbackPost => Boolean(post));
+        if (addedPost) {
+          setNewPostAlert({ id: addedPost.id, title: addedPost.title, author: addedPost.author });
+          if (document.visibilityState !== "visible" && Notification.permission === "granted") {
+            const notification = new Notification("New Keep Swimmin’ feedback", {
+              body: `${addedPost.author}: ${addedPost.title}`,
+              icon: "/keep-swimmin-app-icon.png",
+              tag: `feedback-${addedPost.id}`,
+            });
+            notification.onclick = () => {
+              window.focus();
+              setSelectedId(addedPost.id);
+              notification.close();
+            };
+          }
+        }
+      } else {
+        postsListenerReady.current = true;
+      }
       setPosts(livePosts);
       setSelectedId((current) => livePosts.some((post) => post.id === current) ? current : (livePosts[0]?.id ?? ""));
       setLoadingPosts(false);
@@ -523,6 +558,15 @@ export function FeedbackDashboard() {
     window.localStorage.setItem("feedback-hub-view", view);
   }
 
+  async function enableBrowserNotifications() {
+    if (!("Notification" in window)) {
+      setNotificationPermission("unsupported");
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    setNotificationPermission(permission);
+  }
+
   async function sendOfficialReply() {
     const body = officialReply.trim();
     if (!selected || !user || !isAdmin || !adminMode || !body || sendingReply) return;
@@ -625,6 +669,7 @@ export function FeedbackDashboard() {
             </div>
             <button onClick={() => { setAdminMode((enabled) => !enabled); setActionsMenu(false); setStatusMenu(false); }} aria-pressed={adminMode} title={adminMode ? "Disable editing controls" : "Enable editing controls"} className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-semibold transition ${adminMode ? "border-amber-300 bg-amber-50 text-amber-700" : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"}`}>{adminMode ? <ShieldCheck className="h-4 w-4" /> : <Shield className="h-4 w-4" />}{adminMode ? "Admin on" : "Admin off"}</button>
             <button onClick={toggleTheme} aria-label={darkTheme ? "Use light theme" : "Use dark theme"} title={darkTheme ? "Use light theme" : "Use dark theme"} className="rounded-xl border border-slate-200 bg-white p-2.5 text-slate-500 transition hover:bg-slate-50">{darkTheme ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</button>
+            <button onClick={() => void enableBrowserNotifications()} disabled={notificationPermission === "granted" || notificationPermission === "unsupported"} aria-label="Enable browser feedback notifications" title={notificationPermission === "granted" ? "Browser feedback alerts enabled" : notificationPermission === "denied" ? "Browser notifications are blocked in your browser settings" : notificationPermission === "unsupported" ? "Browser notifications are unavailable" : "Enable browser alerts for new feedback"} className={`rounded-xl border p-2.5 transition ${notificationPermission === "granted" ? "border-emerald-200 bg-emerald-50 text-emerald-600" : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"} disabled:cursor-not-allowed disabled:opacity-65`}><Bell className="h-4 w-4" /></button>
             <button disabled={!adminMode} onClick={() => setBroadcastHistoryOpen(true)} title={adminMode ? "View sent notifications" : "Enable Admin mode first"} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 disabled:opacity-55"><History className="h-3.5 w-3.5" />Sent messages</button>
             <button disabled={!adminMode} onClick={() => { setBroadcastOpen(true); setBroadcastResult(""); }} title={adminMode ? "Choose recipients and write a notification" : "Enable Admin mode first"} className="flex items-center gap-2 rounded-xl bg-[#5285f7] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"><Send className="h-3.5 w-3.5" />Send notification</button>
           </div>
@@ -712,6 +757,8 @@ export function FeedbackDashboard() {
           </aside>
         </div>}
       </section>
+
+      {newPostAlert && <div role="status" className="absolute bottom-6 right-6 z-[80] w-[360px] max-w-[calc(100vw-3rem)] rounded-2xl border border-blue-100 bg-white p-4 shadow-2xl shadow-slate-900/15"><div className="flex items-start gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#5285f7]"><Bell className="h-4 w-4" /></div><div className="min-w-0 flex-1"><p className="text-xs font-bold text-slate-800">New feedback received</p><p className="mt-1 truncate text-xs font-semibold text-slate-700">{newPostAlert.title}</p><p className="mt-0.5 text-[10px] text-slate-400">From {newPostAlert.author}</p><div className="mt-3 flex gap-2"><button onClick={() => { setSelectedId(newPostAlert.id); setDashboardView("list"); setNewPostAlert(null); }} className="rounded-lg bg-[#5285f7] px-3 py-2 text-[10px] font-bold text-white">View feedback</button><button onClick={() => setNewPostAlert(null)} className="rounded-lg px-3 py-2 text-[10px] font-semibold text-slate-500 hover:bg-slate-50">Dismiss</button></div></div><button onClick={() => setNewPostAlert(null)} aria-label="Dismiss new feedback alert" className="rounded-lg p-1 text-slate-400 hover:bg-slate-50"><X className="h-4 w-4" /></button></div></div>}
 
       {audienceOpen && <BroadcastAudienceModal items={broadcastAudience} selected={selectedRecipientIDs} firstNames={recipientFirstNames} loading={loadingAudience} onChange={setSelectedRecipientIDs} onFirstNameChange={(userID, firstName) => { const next = { ...recipientFirstNames, [userID]: firstName }; setRecipientFirstNames(next); window.localStorage.setItem("broadcast-recipient-first-names", JSON.stringify(next)); }} onClose={() => setAudienceOpen(false)} />}
 
