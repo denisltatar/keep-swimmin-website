@@ -202,7 +202,9 @@ export function FeedbackDashboard() {
   const [confirmDeleteComment, setConfirmDeleteComment] = useState<FeedbackComment | null>(null);
   const [mediaViewer, setMediaViewer] = useState<{ urls: string[]; index: number } | null>(null);
   const [darkTheme, setDarkTheme] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [compact, setCompact] = useState(false);
+  const [threadOpen, setThreadOpen] = useState(false);
   const [officialReply, setOfficialReply] = useState("");
   const [sendingReply, setSendingReply] = useState(false);
   const [broadcastOpen, setBroadcastOpen] = useState(false);
@@ -619,6 +621,25 @@ export function FeedbackDashboard() {
     }
   }
 
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 1023px)");
+    setCompact(media.matches);
+    setSidebarOpen(!media.matches);
+    const apply = () => {
+      setCompact(media.matches);
+      if (media.matches) setSidebarOpen(false);
+    };
+    media.addEventListener("change", apply);
+    return () => media.removeEventListener("change", apply);
+  }, []);
+
+  function openThread(postId: string) {
+    setSelectedId(postId);
+    setThreadOpen(true);
+    setActionsMenu(false);
+    setStatusMenu(false);
+  }
+
   if (!authReady) return <PortalMessage title="Opening Feedback Hub…" body="Checking your secure admin session." />;
   if (!user) return <SignInScreen error={dataError} debug={authDebug} onSignIn={signIn} onResetPassword={resetPassword} />;
   if (!isAdmin) return <PortalMessage title="Admin access required" body={`You’re signed in as ${user.email ?? "this account"}, but this account does not have the Firebase admin permission.`} action={<button onClick={signOutUser} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold">Use another account</button>} />;
@@ -627,7 +648,8 @@ export function FeedbackDashboard() {
 
   return (
     <main className={`feedback-admin fixed inset-0 z-50 flex overflow-hidden bg-[#f7f9fc] text-slate-900 ${darkTheme ? "dark-mode" : ""}`}>
-      <aside aria-hidden={!sidebarOpen} className={`flex shrink-0 flex-col overflow-hidden bg-white transition-[width,padding,border] duration-200 ${sidebarOpen ? "w-[248px] border-r border-slate-200/80 px-4 py-5" : "w-0 border-r-0 px-0 py-5"}`}>
+      {compact && sidebarOpen && <button type="button" aria-label="Close menu" onClick={toggleSidebar} className="absolute inset-0 z-40 bg-slate-950/40" />}
+      <aside aria-hidden={!sidebarOpen} className={`flex shrink-0 flex-col overflow-hidden bg-white transition-[width,padding,border] duration-200 ${sidebarOpen ? "absolute inset-y-0 left-0 z-50 w-[min(248px,86vw)] border-r border-slate-200/80 px-4 py-5 shadow-2xl lg:static lg:shadow-none" : "w-0 border-r-0 px-0 py-5"}`}>
         <div className="flex items-center gap-2 px-2">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#5285f7] text-lg font-black text-white shadow-lg shadow-blue-200">K</div>
           <div className="min-w-0 flex-1"><p className="truncate text-[15px] font-bold">Keep Swimmin&apos;</p><p className="text-xs text-slate-400">Admin portal</p></div>
@@ -660,18 +682,18 @@ export function FeedbackDashboard() {
       </aside>
 
       <section className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-[72px] shrink-0 items-center justify-between border-b border-slate-200/80 bg-white px-7">
-          <div className="flex min-w-0 items-center gap-3">{!sidebarOpen && <button onClick={toggleSidebar} aria-label="Show sidebar" title="Show sidebar" className="shrink-0 rounded-xl border border-slate-200 bg-white p-2.5 text-slate-500 transition hover:bg-slate-50"><PanelLeftOpen className="h-4 w-4" /></button>}<div className="min-w-0"><div className="flex items-center gap-2"><h1 className="text-lg font-bold">Feedback Hub</h1><span className="rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-extrabold tracking-wider text-[#5285f7]">BETA</span></div><p className="text-xs text-slate-400">Listen, respond, and shape what comes next.</p></div></div>
-          <div className="flex items-center gap-2">
+        <header className="flex shrink-0 flex-col gap-3 border-b border-slate-200/80 bg-white px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-7">
+          <div className="flex min-w-0 items-center gap-3">{!sidebarOpen && <button onClick={toggleSidebar} aria-label="Show sidebar" title="Show sidebar" className="shrink-0 rounded-xl border border-slate-200 bg-white p-2.5 text-slate-500 transition hover:bg-slate-50"><PanelLeftOpen className="h-4 w-4" /></button>}<div className="min-w-0"><div className="flex items-center gap-2"><h1 className="text-lg font-bold">Feedback Hub</h1><span className="rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-extrabold tracking-wider text-[#5285f7]">BETA</span></div><p className="hidden text-xs text-slate-400 sm:block">Listen, respond, and shape what comes next.</p></div></div>
+          <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
             <div className="flex items-center rounded-xl border border-slate-200 bg-slate-100 p-1" aria-label="Dashboard view">
-              <button onClick={() => changeView("list")} aria-pressed={dashboardView === "list"} className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${dashboardView === "list" ? "bg-white text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}><List className="h-3.5 w-3.5" />List</button>
-              <button onClick={() => changeView("board")} aria-pressed={dashboardView === "board"} className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${dashboardView === "board" ? "bg-white text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}><Columns3 className="h-3.5 w-3.5" />Board</button>
+              <button onClick={() => changeView("list")} aria-pressed={dashboardView === "list"} className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${dashboardView === "list" ? "bg-white text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}><List className="h-3.5 w-3.5" />List</button>
+              <button onClick={() => changeView("board")} aria-pressed={dashboardView === "board"} className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${dashboardView === "board" ? "bg-white text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}><Columns3 className="h-3.5 w-3.5" />Board</button>
             </div>
-            <button onClick={() => { setAdminMode((enabled) => !enabled); setActionsMenu(false); setStatusMenu(false); }} aria-pressed={adminMode} title={adminMode ? "Disable editing controls" : "Enable editing controls"} className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-semibold transition ${adminMode ? "border-amber-300 bg-amber-50 text-amber-700" : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"}`}>{adminMode ? <ShieldCheck className="h-4 w-4" /> : <Shield className="h-4 w-4" />}{adminMode ? "Admin on" : "Admin off"}</button>
-            <button onClick={toggleTheme} aria-label={darkTheme ? "Use light theme" : "Use dark theme"} title={darkTheme ? "Use light theme" : "Use dark theme"} className="rounded-xl border border-slate-200 bg-white p-2.5 text-slate-500 transition hover:bg-slate-50">{darkTheme ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</button>
-            <button onClick={() => void enableBrowserNotifications()} disabled={notificationPermission === "granted" || notificationPermission === "unsupported"} aria-label="Enable browser feedback notifications" title={notificationPermission === "granted" ? "Browser feedback alerts enabled" : notificationPermission === "denied" ? "Browser notifications are blocked in your browser settings" : notificationPermission === "unsupported" ? "Browser notifications are unavailable" : "Enable browser alerts for new feedback"} className={`rounded-xl border p-2.5 transition ${notificationPermission === "granted" ? "border-emerald-200 bg-emerald-50 text-emerald-600" : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"} disabled:cursor-not-allowed disabled:opacity-65`}><Bell className="h-4 w-4" /></button>
-            <button disabled={!adminMode} onClick={() => setBroadcastHistoryOpen(true)} title={adminMode ? "View sent notifications" : "Enable Admin mode first"} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 disabled:opacity-55"><History className="h-3.5 w-3.5" />Sent messages</button>
-            <button disabled={!adminMode} onClick={() => { setBroadcastOpen(true); setBroadcastResult(""); }} title={adminMode ? "Choose recipients and write a notification" : "Enable Admin mode first"} className="flex items-center gap-2 rounded-xl bg-[#5285f7] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"><Send className="h-3.5 w-3.5" />Send notification</button>
+            <button onClick={() => { setAdminMode((enabled) => !enabled); setActionsMenu(false); setStatusMenu(false); }} aria-pressed={adminMode} title={adminMode ? "Disable editing controls" : "Enable editing controls"} className={`flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-semibold transition ${adminMode ? "border-amber-300 bg-amber-50 text-amber-700" : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"}`}>{adminMode ? <ShieldCheck className="h-4 w-4" /> : <Shield className="h-4 w-4" />}{adminMode ? "Admin on" : "Admin off"}</button>
+            <button onClick={toggleTheme} aria-label={darkTheme ? "Use light theme" : "Use dark theme"} title={darkTheme ? "Use light theme" : "Use dark theme"} className="shrink-0 rounded-xl border border-slate-200 bg-white p-2.5 text-slate-500 transition hover:bg-slate-50">{darkTheme ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</button>
+            <button onClick={() => void enableBrowserNotifications()} disabled={notificationPermission === "granted" || notificationPermission === "unsupported"} aria-label="Enable browser feedback notifications" title={notificationPermission === "granted" ? "Browser feedback alerts enabled" : notificationPermission === "denied" ? "Browser notifications are blocked in your browser settings" : notificationPermission === "unsupported" ? "Browser notifications are unavailable" : "Enable browser alerts for new feedback"} className={`shrink-0 rounded-xl border p-2.5 transition ${notificationPermission === "granted" ? "border-emerald-200 bg-emerald-50 text-emerald-600" : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"} disabled:cursor-not-allowed disabled:opacity-65`}><Bell className="h-4 w-4" /></button>
+            <button disabled={!adminMode} onClick={() => setBroadcastHistoryOpen(true)} title={adminMode ? "View sent notifications" : "Enable Admin mode first"} className="flex shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 disabled:opacity-55"><History className="h-3.5 w-3.5" />Sent</button>
+            <button disabled={!adminMode} onClick={() => { setBroadcastOpen(true); setBroadcastResult(""); }} title={adminMode ? "Choose recipients and write a notification" : "Enable Admin mode first"} className="flex shrink-0 items-center gap-2 rounded-xl bg-[#5285f7] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"><Send className="h-3.5 w-3.5" />Notify</button>
           </div>
         </header>
 
@@ -698,36 +720,43 @@ export function FeedbackDashboard() {
             sendingReply={sendingReply}
             onSendReply={sendOfficialReply}
             onOpenPost={(postId) => {
-              setSelectedId(postId);
+              openThread(postId);
               setBoardSelectedId(postId);
             }}
             onClosePost={() => setBoardSelectedId("")}
           />
-        ) : <div className="grid grid-cols-[minmax(430px,1fr)_390px] overflow-hidden">
-          <section className="flex min-w-0 flex-col overflow-hidden border-r border-slate-200/80">
-            <div className="border-b border-slate-200/80 bg-white px-6 py-5">
-              <div className="grid grid-cols-4 gap-3">
+        ) : <div className="relative flex min-h-0 flex-1 overflow-hidden">
+          <section className={`${compact && threadOpen ? "hidden" : "flex"} min-w-0 flex-1 flex-col overflow-hidden border-r border-slate-200/80`}>
+            <div className="border-b border-slate-200/80 bg-white px-4 py-4 lg:px-6 lg:py-5">
+              <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-3">
                 <Metric label="Total feedback" value={posts.length.toString()} detail="All time" />
                 <Metric label="Needs review" value={posts.filter((p) => p.status === "Submitted").length.toString()} detail="New arrivals" accent />
                 <Metric label="In progress" value={posts.filter((p) => p.status === "In Progress").length.toString()} detail="Active work" />
                 <Metric label="Released" value={posts.filter((p) => p.status === "Released").length.toString()} detail="Ready for users" />
               </div>
-              <div className="mt-5 flex items-center gap-3">
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center lg:mt-5">
                 <label className="relative flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search feedback, people, or keywords…" className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-xs outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-50" /></label>
-                <label className="relative"><select value={activeFilter} onChange={(event) => setActiveFilter(event.target.value)} className="h-10 appearance-none rounded-xl border border-slate-200 bg-white pl-3 pr-9 text-xs font-medium outline-none"><option>All feedback</option><option>Feature Idea</option><option>Bug & Problem</option><option>Content & Personalization</option><option>General Feedback</option><option>Submitted</option><option>Reviewing</option><option>Planned</option><option>In Progress</option><option>Released</option></select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" /></label>
+                <label className="relative sm:shrink-0"><select value={activeFilter} onChange={(event) => setActiveFilter(event.target.value)} className="h-10 w-full appearance-none rounded-xl border border-slate-200 bg-white pl-3 pr-9 text-xs font-medium outline-none sm:w-auto"><option>All feedback</option><option>Feature Idea</option><option>Bug & Problem</option><option>Content & Personalization</option><option>General Feedback</option><option>Submitted</option><option>Reviewing</option><option>Planned</option><option>In Progress</option><option>Released</option></select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" /></label>
               </div>
             </div>
 
             {dataError && <div className="border-b border-rose-100 bg-rose-50 px-6 py-2.5 text-[11px] font-medium text-rose-700">{dataError}</div>}
-            <div className="flex items-center justify-between border-b border-slate-200/80 px-6 py-3 text-[11px] text-slate-400"><span>{filteredPosts.length} live conversations</span><button disabled title="Sorting options coming soon" className="flex cursor-not-allowed items-center gap-1 font-semibold text-slate-400 opacity-55">Newest first <ChevronDown className="h-3.5 w-3.5" /></button></div>
-            <div className="overflow-y-auto">
-              {filteredPosts.map((post) => <PostRow key={post.id} post={post} active={selected.id === post.id} onClick={() => setSelectedId(post.id)} />)}
+            <div className="flex items-center justify-between border-b border-slate-200/80 px-4 py-3 text-[11px] text-slate-400 lg:px-6"><span>{filteredPosts.length} live conversations</span><button disabled title="Sorting options coming soon" className="flex cursor-not-allowed items-center gap-1 font-semibold text-slate-400 opacity-55">Newest first <ChevronDown className="h-3.5 w-3.5" /></button></div>
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              {filteredPosts.map((post) => <PostRow key={post.id} post={post} active={!compact && selected.id === post.id} onClick={() => openThread(post.id)} />)}
               {filteredPosts.length === 0 && <div className="grid h-64 place-items-center text-sm text-slate-400">No feedback matches this view.</div>}
             </div>
           </section>
 
-          <aside className="overflow-y-auto bg-white">
-            <div className="border-b border-slate-100 px-6 py-5">
+          <aside className={`${compact ? (threadOpen ? "absolute inset-0 z-20 flex" : "hidden") : "flex w-[390px] shrink-0"} min-h-0 flex-col overflow-y-auto bg-white`}>
+            {compact && (
+              <div className="sticky top-0 z-10 border-b border-slate-100 bg-white px-3 py-2">
+                <button type="button" onClick={() => setThreadOpen(false)} className="flex items-center gap-1 rounded-xl px-2 py-2 text-sm font-semibold text-slate-700">
+                  <ChevronLeft className="h-4 w-4" /> All feedback
+                </button>
+              </div>
+            )}
+            <div className="border-b border-slate-100 px-4 py-5 lg:px-6">
               <div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Conversation</p><h2 className="mt-2 text-xl font-bold leading-tight">{selected.title}</h2></div><div className="relative"><button disabled={!adminMode} onClick={() => setActionsMenu((open) => !open)} aria-label={adminMode ? "More actions" : "Enable admin mode to edit"} title={adminMode ? "Post actions" : "Enable Admin mode first"} className="rounded-lg border border-slate-200 p-2 text-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-35"><Ellipsis className="h-4 w-4" /></button>{actionsMenu && <div className="absolute right-0 z-20 mt-2 w-40 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl"><button onClick={() => { setEditing(selected); setActionsMenu(false); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium hover:bg-slate-50"><Pencil className="h-3.5 w-3.5" />Edit post</button><button onClick={() => setConfirmDelete(true)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium text-rose-600 hover:bg-rose-50"><Trash2 className="h-3.5 w-3.5" />Delete post</button></div>}</div></div>
               <div className="mt-4 flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 text-[11px] font-bold text-blue-700">{selected.initials}</div><div><p className="text-xs font-semibold">{selected.author}</p><p className="text-[11px] text-slate-400">{selected.time} · {selected.version}</p></div></div>
               <div className="mt-4 grid grid-cols-2 gap-2">
@@ -758,7 +787,7 @@ export function FeedbackDashboard() {
         </div>}
       </section>
 
-      {newPostAlert && <div role="status" className="absolute bottom-6 right-6 z-[80] w-[360px] max-w-[calc(100vw-3rem)] rounded-2xl border border-blue-100 bg-white p-4 shadow-2xl shadow-slate-900/15"><div className="flex items-start gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#5285f7]"><Bell className="h-4 w-4" /></div><div className="min-w-0 flex-1"><p className="text-xs font-bold text-slate-800">New feedback received</p><p className="mt-1 truncate text-xs font-semibold text-slate-700">{newPostAlert.title}</p><p className="mt-0.5 text-[10px] text-slate-400">From {newPostAlert.author}</p><div className="mt-3 flex gap-2"><button onClick={() => { setSelectedId(newPostAlert.id); setDashboardView("list"); setNewPostAlert(null); }} className="rounded-lg bg-[#5285f7] px-3 py-2 text-[10px] font-bold text-white">View feedback</button><button onClick={() => setNewPostAlert(null)} className="rounded-lg px-3 py-2 text-[10px] font-semibold text-slate-500 hover:bg-slate-50">Dismiss</button></div></div><button onClick={() => setNewPostAlert(null)} aria-label="Dismiss new feedback alert" className="rounded-lg p-1 text-slate-400 hover:bg-slate-50"><X className="h-4 w-4" /></button></div></div>}
+      {newPostAlert && <div role="status" className="absolute bottom-4 left-4 right-4 z-[80] rounded-2xl border border-blue-100 bg-white p-4 shadow-2xl shadow-slate-900/15 sm:left-auto sm:w-[360px]"><div className="flex items-start gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#5285f7]"><Bell className="h-4 w-4" /></div><div className="min-w-0 flex-1"><p className="text-xs font-bold text-slate-800">New feedback received</p><p className="mt-1 truncate text-xs font-semibold text-slate-700">{newPostAlert.title}</p><p className="mt-0.5 text-[10px] text-slate-400">From {newPostAlert.author}</p><div className="mt-3 flex gap-2"><button onClick={() => { openThread(newPostAlert.id); setDashboardView("list"); setBoardSelectedId(""); setNewPostAlert(null); }} className="rounded-lg bg-[#5285f7] px-3 py-2 text-[10px] font-bold text-white">View feedback</button><button onClick={() => setNewPostAlert(null)} className="rounded-lg px-3 py-2 text-[10px] font-semibold text-slate-500 hover:bg-slate-50">Dismiss</button></div></div><button onClick={() => setNewPostAlert(null)} aria-label="Dismiss new feedback alert" className="rounded-lg p-1 text-slate-400 hover:bg-slate-50"><X className="h-4 w-4" /></button></div></div>}
 
       {audienceOpen && <BroadcastAudienceModal items={broadcastAudience} selected={selectedRecipientIDs} firstNames={recipientFirstNames} loading={loadingAudience} onChange={setSelectedRecipientIDs} onFirstNameChange={(userID, firstName) => { const next = { ...recipientFirstNames, [userID]: firstName }; setRecipientFirstNames(next); window.localStorage.setItem("broadcast-recipient-first-names", JSON.stringify(next)); }} onClose={() => setAudienceOpen(false)} />}
 
@@ -907,18 +936,18 @@ function BoardView({
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div className="feedback-board-toolbar flex items-center justify-between border-b border-slate-200/80 bg-white px-6 py-4">
+      <div className="feedback-board-toolbar flex flex-col gap-3 border-b border-slate-200/80 bg-white px-4 py-4 lg:flex-row lg:items-center lg:justify-between lg:px-6">
         <div>
           <h2 className="text-sm font-bold">Status board</h2>
-          <p className="mt-0.5 text-[11px] text-slate-400">Drag tickets between columns to update their status instantly.</p>
+          <p className="mt-0.5 text-[11px] text-slate-400">Swipe between columns. Tap a ticket to update it. Drag still works on a wide screen.</p>
         </div>
-        <div className="flex w-full max-w-xl items-center gap-3">
+        <div className="flex w-full max-w-xl flex-col gap-2 sm:flex-row sm:items-center">
           <label className="relative flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search the board…" className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-xs outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-50" /></label>
           <label className="relative"><select value={activeFilter} onChange={(event) => setActiveFilter(event.target.value)} className="h-10 appearance-none rounded-xl border border-slate-200 bg-white pl-3 pr-9 text-xs font-medium outline-none"><option>All feedback</option><option>Feature Idea</option><option>Bug & Problem</option><option>Content & Personalization</option><option>General Feedback</option></select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" /></label>
         </div>
       </div>
 
-      <div className="feedback-board flex min-h-0 flex-1 gap-4 overflow-x-auto p-5">
+      <div className="feedback-board flex min-h-0 flex-1 snap-x snap-mandatory gap-3 overflow-x-auto p-3 lg:gap-4 lg:p-5">
         {statuses.map((status) => {
           const statusPosts = posts.filter((post) => post.status === status);
           return (
@@ -936,7 +965,7 @@ function BoardView({
                 event.preventDefault();
                 void dropPost(status, event.dataTransfer.getData("text/plain"));
               }}
-              className={`feedback-board-column flex w-[306px] min-w-[306px] flex-col overflow-hidden rounded-2xl border bg-slate-50/70 transition ${dropTarget === status ? "border-blue-400 ring-4 ring-blue-100" : "border-slate-200"}`}
+              className={`feedback-board-column flex w-[min(85vw,306px)] min-w-[min(85vw,306px)] snap-start flex-col overflow-hidden rounded-2xl border bg-slate-50/70 transition lg:w-[306px] lg:min-w-[306px] ${dropTarget === status ? "border-blue-400 ring-4 ring-blue-100" : "border-slate-200"}`}
             >
               <header className="feedback-board-column-header flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3.5">
                 <div className="flex items-center gap-2">
@@ -1046,10 +1075,10 @@ function BoardTicketDrawer({
   return (
     <>
       <button onClick={onClose} aria-label="Close ticket details" className="absolute inset-0 z-20 cursor-default bg-slate-950/35 backdrop-blur-[1px]" />
-      <aside className="feedback-board-drawer absolute inset-y-0 right-0 z-30 flex w-[480px] max-w-[94vw] flex-col border-l border-slate-200 bg-white shadow-2xl">
-        <header className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-          <div><p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#5285f7]">Conversation workspace</p><p className="mt-1 text-xs text-slate-400">Manage this ticket without leaving the board</p></div>
-          <div className="flex items-center gap-1.5">
+      <aside className="feedback-board-drawer absolute inset-y-0 right-0 z-30 flex w-full flex-col border-l border-slate-200 bg-white shadow-2xl sm:w-[480px] sm:max-w-[94vw]">
+        <header className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-4">
+          <div className="min-w-0"><p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#5285f7]">Conversation workspace</p><p className="mt-1 text-xs text-slate-400">Manage this ticket without leaving the board</p></div>
+          <div className="flex shrink-0 items-center gap-1.5">
             <button disabled={!canManage} onClick={onEditPost} title={canManage ? "Edit post" : "Enable Admin mode to edit"} className="rounded-xl border border-slate-200 p-2 text-slate-400 transition hover:bg-slate-50 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-35"><Pencil className="h-4 w-4" /></button>
             <button disabled={!canManage} onClick={onDeletePost} title={canManage ? "Delete post" : "Enable Admin mode to delete"} className="rounded-xl border border-slate-200 p-2 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-35"><Trash2 className="h-4 w-4" /></button>
             <button onClick={onClose} aria-label="Close details" className="rounded-xl border border-slate-200 p-2 text-slate-400 transition hover:bg-slate-50 hover:text-slate-600"><X className="h-4 w-4" /></button>
@@ -1063,7 +1092,7 @@ function BoardTicketDrawer({
                 <button disabled={!canManage} onClick={() => setStatusOpen((open) => !open)} title={canManage ? "Change ticket status" : "Enable Admin mode to change status"} className={`flex w-full items-center justify-between rounded-xl px-3.5 py-3 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-65 ${statusStyle[post.status]}`}><span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-current opacity-70" />{post.status}</span><ChevronDown className="mr-0.5 h-4 w-4 shrink-0" /></button>
                 {statusOpen && <div className="absolute z-20 mt-2 w-full rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">{statuses.map((status) => <button key={status} onClick={() => { setStatusOpen(false); void onUpdateStatus(status); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium hover:bg-slate-50"><span className={`h-2 w-2 rounded-full ${status === "Released" ? "bg-emerald-500" : status === "In Progress" ? "bg-blue-500" : status === "Planned" ? "bg-violet-500" : status === "Reviewing" ? "bg-amber-500" : "bg-slate-400"}`} />{status}</button>)}</div>}
               </div>
-              <label className="relative mt-0.5 w-[190px] shrink-0"><select disabled={!canManage} value={post.category} onChange={(event) => void onUpdateCategory(event.target.value as Category)} title={canManage ? "Change ticket type" : "Enable Admin mode to change type"} className="h-[42px] w-full appearance-none rounded-xl border border-slate-200 bg-white pl-9 pr-8 text-[10px] font-semibold outline-none disabled:cursor-not-allowed disabled:opacity-65">{categories.map((category) => <option key={category}>{category}</option>)}</select><Icon className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" /><ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" /></label>
+              <label className="relative mt-0.5 w-full shrink-0 sm:w-[190px]"><select disabled={!canManage} value={post.category} onChange={(event) => void onUpdateCategory(event.target.value as Category)} title={canManage ? "Change ticket type" : "Enable Admin mode to change type"} className="h-[42px] w-full appearance-none rounded-xl border border-slate-200 bg-white pl-9 pr-8 text-[10px] font-semibold outline-none disabled:cursor-not-allowed disabled:opacity-65">{categories.map((category) => <option key={category}>{category}</option>)}</select><Icon className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" /><ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" /></label>
             </div>
             <h2 className="mt-4 text-xl font-bold leading-7 text-slate-900">{post.title}</h2>
             <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-600">{post.body}</p>
