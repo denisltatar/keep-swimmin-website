@@ -669,6 +669,11 @@ export function FeedbackDashboard() {
         </nav>
 
           <div className="mt-auto space-y-1 border-t border-slate-100 pt-4 text-sm font-medium">
+          <div className="mb-2 grid grid-cols-3 gap-1 lg:hidden">
+            <button onClick={toggleTheme} aria-label={darkTheme ? "Use light theme" : "Use dark theme"} className="flex flex-col items-center gap-1 rounded-xl border border-slate-200 bg-white px-1 py-2 text-[10px] font-semibold text-slate-500">{darkTheme ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}Theme</button>
+            <button onClick={() => void enableBrowserNotifications()} disabled={notificationPermission === "granted" || notificationPermission === "unsupported"} aria-label="Enable browser feedback notifications" className="flex flex-col items-center gap-1 rounded-xl border border-slate-200 bg-white px-1 py-2 text-[10px] font-semibold text-slate-500 disabled:opacity-50"><Bell className="h-4 w-4" />Alerts</button>
+            <button disabled={!adminMode} onClick={() => { setBroadcastHistoryOpen(true); setSidebarOpen(false); }} className="flex flex-col items-center gap-1 rounded-xl border border-slate-200 bg-white px-1 py-2 text-[10px] font-semibold text-slate-500 disabled:opacity-40"><History className="h-4 w-4" />Sent</button>
+          </div>
           <NavItem icon={CircleHelp} label="Help & support" disabled />
           <NavItem icon={Settings} label="Settings" disabled />
           <div className="mt-4 flex items-center gap-3 rounded-xl border border-slate-200/80 bg-slate-50 p-2.5">
@@ -685,24 +690,16 @@ export function FeedbackDashboard() {
         <header className="shrink-0 border-b border-slate-200/80 bg-white px-4 py-3 lg:flex lg:h-[72px] lg:items-center lg:justify-between lg:px-7 lg:py-0">
           <div className="flex min-w-0 items-center gap-3">
             {!sidebarOpen && <button onClick={toggleSidebar} aria-label="Show sidebar" title="Show sidebar" className="shrink-0 rounded-xl border border-slate-200 bg-white p-2.5 text-slate-500 transition hover:bg-slate-50"><PanelLeftOpen className="h-4 w-4" /></button>}
-            <div className="min-w-0 flex-1">
+            <div className="hidden min-w-0 flex-1 lg:block">
               <div className="flex items-center gap-2"><h1 className="truncate text-lg font-bold">Feedback Hub</h1><span className="rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-extrabold tracking-wider text-[#5285f7]">BETA</span></div>
-              <p className="hidden text-xs text-slate-400 sm:block">Listen, respond, and shape what comes next.</p>
+              <p className="text-xs text-slate-400">Listen, respond, and shape what comes next.</p>
             </div>
-            <div className="flex items-center gap-1.5 lg:hidden">
-              <button onClick={toggleTheme} aria-label={darkTheme ? "Use light theme" : "Use dark theme"} className="rounded-xl border border-slate-200 bg-white p-2.5 text-slate-500"><Sun className={`h-4 w-4 ${darkTheme ? "" : "hidden"}`} /><Moon className={`h-4 w-4 ${darkTheme ? "hidden" : ""}`} /></button>
-              <button onClick={() => void enableBrowserNotifications()} disabled={notificationPermission === "granted" || notificationPermission === "unsupported"} aria-label="Enable browser feedback notifications" className={`rounded-xl border p-2.5 disabled:opacity-65 ${notificationPermission === "granted" ? "border-emerald-200 bg-emerald-50 text-emerald-600" : "border-slate-200 bg-white text-slate-500"}`}><Bell className="h-4 w-4" /></button>
-              <button disabled={!adminMode} onClick={() => setBroadcastHistoryOpen(true)} aria-label="Sent messages" className="rounded-xl border border-slate-200 bg-white p-2.5 text-slate-500 disabled:opacity-40"><History className="h-4 w-4" /></button>
+            <div className="grid min-w-0 flex-1 grid-cols-2 rounded-xl bg-slate-100 p-1 lg:hidden" aria-label="Dashboard view">
+              <button onClick={() => changeView("list")} aria-pressed={dashboardView === "list"} className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-semibold ${dashboardView === "list" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500"}`}><List className="h-4 w-4" />List</button>
+              <button onClick={() => changeView("board")} aria-pressed={dashboardView === "board"} className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-semibold ${dashboardView === "board" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500"}`}><Columns3 className="h-4 w-4" />Board</button>
             </div>
-          </div>
-
-          <div className="mt-3 grid grid-cols-2 gap-2 lg:hidden">
-            <div className="col-span-2 grid grid-cols-2 rounded-xl bg-slate-100 p-1" aria-label="Dashboard view">
-              <button onClick={() => changeView("list")} aria-pressed={dashboardView === "list"} className={`flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-semibold ${dashboardView === "list" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500"}`}><List className="h-4 w-4" />List</button>
-              <button onClick={() => changeView("board")} aria-pressed={dashboardView === "board"} className={`flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-semibold ${dashboardView === "board" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500"}`}><Columns3 className="h-4 w-4" />Board</button>
-            </div>
-            <button onClick={() => { setAdminMode((enabled) => !enabled); setActionsMenu(false); setStatusMenu(false); }} aria-pressed={adminMode} className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold ${adminMode ? "border-amber-300 bg-amber-50 text-amber-700" : "border-slate-200 bg-white text-slate-600"}`}>{adminMode ? <ShieldCheck className="h-4 w-4" /> : <Shield className="h-4 w-4" />}{adminMode ? "Admin on" : "Admin off"}</button>
-            <button disabled={!adminMode} onClick={() => { setBroadcastOpen(true); setBroadcastResult(""); }} className="flex items-center justify-center gap-2 rounded-xl bg-[#5285f7] px-3 py-2.5 text-sm font-semibold text-white disabled:bg-slate-200 disabled:text-slate-400"><Send className="h-4 w-4" />Send</button>
+            <button onClick={() => { setAdminMode((enabled) => !enabled); setActionsMenu(false); setStatusMenu(false); }} aria-pressed={adminMode} aria-label={adminMode ? "Admin on" : "Admin off"} title={adminMode ? "Disable editing controls" : "Enable editing controls"} className={`rounded-xl border p-2.5 lg:hidden ${adminMode ? "border-amber-300 bg-amber-50 text-amber-700" : "border-slate-200 bg-white text-slate-500"}`}>{adminMode ? <ShieldCheck className="h-4 w-4" /> : <Shield className="h-4 w-4" />}</button>
+            <button disabled={!adminMode} onClick={() => { setBroadcastOpen(true); setBroadcastResult(""); }} aria-label="Send notification" title={adminMode ? "Send a notification" : "Enable Admin mode first"} className="rounded-xl bg-[#5285f7] p-2.5 text-white disabled:bg-slate-200 disabled:text-slate-400 lg:hidden"><Send className="h-4 w-4" /></button>
           </div>
 
           <div className="hidden items-center gap-2 lg:flex">
@@ -748,21 +745,27 @@ export function FeedbackDashboard() {
           />
         ) : <div className="relative flex min-h-0 flex-1 overflow-hidden">
           <section className={`${compact && threadOpen ? "hidden" : "flex"} min-w-0 flex-1 flex-col overflow-hidden border-r border-slate-200/80`}>
-            <div className="border-b border-slate-200/80 bg-white px-4 py-4 lg:px-6 lg:py-5">
-              <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-3">
+            <div className="border-b border-slate-200/80 bg-white px-4 py-2.5 lg:px-6 lg:py-5">
+              <div className="hidden lg:grid lg:grid-cols-4 lg:gap-3">
                 <Metric label="Total feedback" value={posts.length.toString()} detail="All time" />
                 <Metric label="Needs review" value={posts.filter((p) => p.status === "Submitted").length.toString()} detail="New arrivals" accent />
                 <Metric label="In progress" value={posts.filter((p) => p.status === "In Progress").length.toString()} detail="Active work" />
                 <Metric label="Released" value={posts.filter((p) => p.status === "Released").length.toString()} detail="Ready for users" />
               </div>
-              <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center lg:mt-5">
+              <p className="mb-2 flex justify-between text-[11px] font-medium text-slate-500 lg:hidden">
+                <span>{posts.length} total</span>
+                <span>{posts.filter((p) => p.status === "Submitted").length} new</span>
+                <span>{posts.filter((p) => p.status === "In Progress").length} active</span>
+                <span>{posts.filter((p) => p.status === "Released").length} released</span>
+              </p>
+              <div className="flex items-center gap-2 lg:mt-5">
                 <label className="relative flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search feedback, people, or keywords…" className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-xs outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-50" /></label>
                 <label className="relative sm:shrink-0"><select value={activeFilter} onChange={(event) => setActiveFilter(event.target.value)} className="h-10 w-full appearance-none rounded-xl border border-slate-200 bg-white pl-3 pr-9 text-xs font-medium outline-none sm:w-auto"><option>All feedback</option><option>Feature Idea</option><option>Bug & Problem</option><option>Content & Personalization</option><option>General Feedback</option><option>Submitted</option><option>Reviewing</option><option>Planned</option><option>In Progress</option><option>Released</option></select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" /></label>
               </div>
             </div>
 
             {dataError && <div className="border-b border-rose-100 bg-rose-50 px-6 py-2.5 text-[11px] font-medium text-rose-700">{dataError}</div>}
-            <div className="flex items-center justify-between border-b border-slate-200/80 px-4 py-3 text-[11px] text-slate-400 lg:px-6"><span>{filteredPosts.length} live conversations</span><button disabled title="Sorting options coming soon" className="flex cursor-not-allowed items-center gap-1 font-semibold text-slate-400 opacity-55">Newest first <ChevronDown className="h-3.5 w-3.5" /></button></div>
+            <div className="hidden items-center justify-between border-b border-slate-200/80 px-4 py-3 text-[11px] text-slate-400 lg:flex lg:px-6"><span>{filteredPosts.length} live conversations</span><button disabled title="Sorting options coming soon" className="flex cursor-not-allowed items-center gap-1 font-semibold text-slate-400 opacity-55">Newest first <ChevronDown className="h-3.5 w-3.5" /></button></div>
             <div className="min-h-0 flex-1 overflow-y-auto">
               {filteredPosts.map((post) => <PostRow key={post.id} post={post} active={!compact && selected.id === post.id} onClick={() => openThread(post.id)} />)}
               {filteredPosts.length === 0 && <div className="grid h-64 place-items-center text-sm text-slate-400">No feedback matches this view.</div>}
@@ -957,12 +960,12 @@ function BoardView({
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div className="feedback-board-toolbar flex flex-col gap-3 border-b border-slate-200/80 bg-white px-4 py-4 lg:flex-row lg:items-center lg:justify-between lg:px-6">
-        <div>
+      <div className="feedback-board-toolbar flex flex-col gap-2 border-b border-slate-200/80 bg-white px-4 py-2.5 lg:flex-row lg:items-center lg:justify-between lg:px-6 lg:py-4">
+        <div className="hidden lg:block">
           <h2 className="text-sm font-bold">Status board</h2>
-          <p className="mt-0.5 text-[11px] text-slate-400">Swipe between columns. Tap a ticket to update it. Drag still works on a wide screen.</p>
+          <p className="mt-0.5 text-[11px] text-slate-400">Drag tickets between columns to update their status.</p>
         </div>
-        <div className="flex w-full max-w-xl flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex w-full max-w-xl items-center gap-2">
           <label className="relative flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search the board…" className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-xs outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-50" /></label>
           <label className="relative"><select value={activeFilter} onChange={(event) => setActiveFilter(event.target.value)} className="h-10 appearance-none rounded-xl border border-slate-200 bg-white pl-3 pr-9 text-xs font-medium outline-none"><option>All feedback</option><option>Feature Idea</option><option>Bug & Problem</option><option>Content & Personalization</option><option>General Feedback</option></select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" /></label>
         </div>
