@@ -896,15 +896,60 @@ function BroadcastAudienceModal({ items, selected, firstNames, loading, onChange
   };
 
   return (
-    <div className="absolute inset-0 z-[60] grid place-items-center bg-slate-950/30 p-6 backdrop-blur-sm">
-      <section className="flex max-h-[88vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-        <header className="flex items-start justify-between border-b border-slate-200 px-6 py-5">
-          <div><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#5285f7]">Notification audience</p><h2 className="mt-1 text-xl font-bold">Choose recipients</h2><p className="mt-1 text-xs text-slate-500">Only users with an active notification registration can be selected.</p></div>
-          <button type="button" onClick={onClose} aria-label="Close" className="rounded-xl p-2 text-slate-400 hover:bg-slate-100"><X className="h-5 w-5" /></button>
+    <div className="absolute inset-0 z-[60] flex items-end bg-slate-950/40 sm:items-center sm:justify-center sm:p-6">
+      <section className="flex max-h-[100dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:max-h-[88vh] sm:max-w-3xl sm:rounded-3xl">
+        <header className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 pb-3 pt-[max(0.85rem,env(safe-area-inset-top))] sm:px-6 sm:pt-5">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#5285f7]">Audience</p>
+            <h2 className="mt-1 text-lg font-bold">Choose recipients</h2>
+            <p className="mt-1 text-xs leading-5 text-slate-500">Only people with notifications turned on can be selected.</p>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close" className="shrink-0 rounded-xl border border-slate-200 p-2 text-slate-500"><X className="h-5 w-5" /></button>
         </header>
-        <div className="flex items-center gap-3 border-b border-slate-200 px-6 py-4"><label className="relative flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, email, device, or app version" className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-xs outline-none focus:border-blue-300 focus:bg-white" /></label><button type="button" onClick={() => onChange(new Set(eligible.map((item) => item.userID)))} className="rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-semibold text-slate-600">Select all active</button><button type="button" onClick={() => onChange(new Set())} className="rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-500">Clear</button></div>
-        <div className="overflow-y-auto p-6">{loading ? <p className="py-12 text-center text-sm text-slate-500">Loading users…</p> : <div className="space-y-2">{filtered.map((item) => <div key={item.userID} className={`flex items-start gap-3 rounded-xl border p-4 ${item.hasToken ? "border-slate-200 hover:border-blue-200 hover:bg-blue-50/40" : "border-slate-100 bg-slate-50 opacity-65"}`}><input type="checkbox" disabled={!item.hasToken} checked={selected.has(item.userID)} onChange={() => toggle(item.userID)} className="mt-1 h-4 w-4 accent-[#5285f7]" /><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-800">{item.displayName || item.email || "Unnamed user"}</p>{item.displayName && item.email && <p className="truncate text-xs text-slate-400">{item.email}</p>}</div><span className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-bold uppercase ${item.hasToken ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>{item.hasToken ? "Notifications ready" : "No device token"}</span></div>{item.hasToken && <label className="mt-3 flex items-center gap-2 text-[10px] font-semibold text-slate-500"><span className="shrink-0">First name used</span><input maxLength={15} value={firstNames[item.userID] || suggestedFirstName(item)} onChange={(event) => onFirstNameChange(item.userID, event.target.value.replace(/[^\p{L}'’-]/gu, "").slice(0, 15))} className="h-8 max-w-40 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-700 outline-none focus:border-blue-300" /></label>}<p className="mt-2 text-[11px] text-slate-500">{[item.deviceName, item.deviceModel, item.systemVersion && `iOS ${item.systemVersion}`, item.appVersion && `App ${item.appVersion}${item.appBuild ? ` (${item.appBuild})` : ""}`].filter(Boolean).join(" · ") || "Device and app details will appear after this user opens the next app version."}</p><p className="mt-1 text-[10px] text-slate-400">{item.registeredAt ? `Registered ${new Date(item.registeredAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}` : "No recent registration time"}</p></div></div>)}{!filtered.length && <p className="py-12 text-center text-sm text-slate-500">No users match your search.</p>}</div>}</div>
-        <footer className="flex items-center justify-between border-t border-slate-200 px-6 py-4"><p className="text-xs text-slate-500">{selected.size} selected · {eligible.length} notification-ready · {items.length} total users</p><button type="button" onClick={onClose} className="rounded-xl bg-[#5285f7] px-5 py-2.5 text-xs font-semibold text-white">Done</button></footer>
+        <div className="space-y-2 border-b border-slate-100 px-4 py-3 sm:px-6">
+          <label className="relative block">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name or email" className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-base outline-none focus:border-blue-300 focus:bg-white" />
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <button type="button" onClick={() => onChange(new Set(eligible.map((item) => item.userID)))} className="rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-700">Select all active</button>
+            <button type="button" onClick={() => onChange(new Set())} className="rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-500">Clear</button>
+          </div>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-6">
+          {loading ? <p className="py-12 text-center text-sm text-slate-500">Loading users…</p> : (
+            <div className="space-y-2">
+              {filtered.map((item) => (
+                <div key={item.userID} className={`rounded-2xl border p-3 ${item.hasToken ? "border-slate-200 bg-white" : "border-slate-100 bg-slate-50 opacity-70"}`}>
+                  <label className="flex items-start gap-3">
+                    <input type="checkbox" disabled={!item.hasToken} checked={selected.has(item.userID)} onChange={() => toggle(item.userID)} className="mt-1 h-5 w-5 accent-[#5285f7]" />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-start justify-between gap-2">
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-semibold text-slate-800">{item.displayName || item.email || "Unnamed user"}</span>
+                          {item.displayName && item.email && <span className="mt-0.5 block truncate text-xs text-slate-400">{item.email}</span>}
+                        </span>
+                        <span className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-bold uppercase ${item.hasToken ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>{item.hasToken ? "Ready" : "No token"}</span>
+                      </span>
+                      <span className="mt-2 block text-[11px] leading-5 text-slate-500">{[item.deviceName, item.deviceModel, item.systemVersion && `iOS ${item.systemVersion}`, item.appVersion && `App ${item.appVersion}`].filter(Boolean).join(" · ") || "Device details appear after they open the app."}</span>
+                    </span>
+                  </label>
+                  {item.hasToken && (
+                    <label className="mt-3 block pl-8 text-[11px] font-semibold text-slate-500">
+                      First name in the message
+                      <input maxLength={15} value={firstNames[item.userID] || suggestedFirstName(item)} onChange={(event) => onFirstNameChange(item.userID, event.target.value.replace(/[^\p{L}'’-]/gu, "").slice(0, 15))} className="mt-1 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-base font-semibold text-slate-700 outline-none focus:border-blue-300" />
+                    </label>
+                  )}
+                </div>
+              ))}
+              {!filtered.length && <p className="py-12 text-center text-sm text-slate-500">No users match your search.</p>}
+            </div>
+          )}
+        </div>
+        <footer className="border-t border-slate-100 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 sm:flex sm:items-center sm:justify-between sm:px-6 sm:pb-5">
+          <p className="mb-2 text-center text-xs text-slate-500 sm:mb-0 sm:text-left">{selected.size} selected · {eligible.length} ready</p>
+          <button type="button" onClick={onClose} className="w-full rounded-xl bg-[#5285f7] py-3 text-sm font-semibold text-white sm:w-auto sm:px-5 sm:py-2.5">Done</button>
+        </footer>
       </section>
     </div>
   );
