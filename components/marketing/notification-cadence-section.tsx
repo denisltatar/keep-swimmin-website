@@ -16,14 +16,20 @@ const THUMB_LEFT_PCT = [8, 29, 50, 71, 92] as const;
 export function NotificationCadenceSection({ className }: { className?: string }) {
   const reduce = useReducedMotion();
   const [activeIdx, setActiveIdx] = useState(2);
+  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
-    if (reduce) return;
+    if (reduce || paused) return;
     const id = window.setInterval(() => {
       setActiveIdx((i) => (i + 1) % HOURS.length);
     }, 2400);
     return () => window.clearInterval(id);
-  }, [reduce]);
+  }, [reduce, paused]);
+
+  function chooseHour(index: number) {
+    setPaused(true);
+    setActiveIdx(index);
+  }
 
   return (
     <MotionConfig reducedMotion={reduce ? "always" : "user"}>
@@ -91,7 +97,11 @@ export function NotificationCadenceSection({ className }: { className?: string }
                 </p>
               </div>
 
-              <div className="relative mx-auto mt-10 max-w-md md:mt-12">
+              <div
+                className="relative mx-auto mt-10 max-w-md md:mt-12"
+                role="radiogroup"
+                aria-label="Hours between quotes"
+              >
                 <div className="relative h-28 md:h-32">
                   <div
                     className="absolute left-[8%] right-[8%] top-[46%] h-2 -translate-y-1/2 rounded-full bg-gradient-to-r from-sky-100 via-sky-200/90 to-blue-100 shadow-inner"
@@ -129,33 +139,24 @@ export function NotificationCadenceSection({ className }: { className?: string }
                   </motion.div>
                 </div>
 
-                <div className="relative mt-1 h-16 md:h-[4.5rem]">
+                <div className="relative mt-1 h-14">
                   {HOURS.map((h, i) => (
-                    <div
+                    <button
                       key={h}
-                      className="absolute left-0 top-0 w-16 -translate-x-1/2 text-center md:w-20"
+                      type="button"
+                      role="radio"
+                      aria-checked={i === activeIdx}
+                      onClick={() => chooseHour(i)}
+                      className="absolute top-0 flex h-11 w-11 -translate-x-1/2 touch-manipulation items-center justify-center rounded-full text-sm font-bold tabular-nums transition-colors md:text-base"
                       style={{ left: `${THUMB_LEFT_PCT[i]}%` }}
                     >
-                      <p
-                        className={cn(
-                          "text-sm font-bold tabular-nums md:text-base",
-                          i === activeIdx ? "text-sky-700" : "text-slate-400",
-                        )}
-                      >
-                        {h}h
-                      </p>
-                      {h === 4 && (
-                        <p className="mt-0.5 text-[10px] font-medium leading-tight text-slate-400 md:text-[11px]">
-                          Steadier drip
-                        </p>
-                      )}
-                      {h === 8 && (
-                        <p className="mt-0.5 text-[10px] font-medium leading-tight text-slate-400 md:text-[11px]">
-                          More air
-                        </p>
-                      )}
-                    </div>
+                      <span className={cn(i === activeIdx ? "text-sky-700" : "text-slate-400")}>{h}h</span>
+                    </button>
                   ))}
+                </div>
+                <div className="mt-1 flex justify-between px-1 text-[11px] font-medium text-slate-400">
+                  <span>Steadier drip</span>
+                  <span>More air</span>
                 </div>
               </div>
 

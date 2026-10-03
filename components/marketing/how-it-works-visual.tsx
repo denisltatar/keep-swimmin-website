@@ -330,7 +330,8 @@ export function HowItWorksVisualSection({ className }: { className?: string }) {
               Theme in, quotes out
             </h2>
             <p className="mt-3 text-base text-slate-600 md:text-lg">
-              Steps on the left—watch the demo build on the right.
+              <span className="lg:hidden">Follow the steps, then watch the demo fill in below.</span>
+              <span className="hidden lg:inline">Steps on the left—watch the demo build on the right.</span>
             </p>
           </motion.div>
 

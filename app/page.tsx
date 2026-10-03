@@ -13,9 +13,9 @@ export default function HomePage() {
     <>
       <main>
         {/* Hero */}
-        <section className="mx-auto grid max-w-6xl items-center gap-10 px-6 py-14 md:grid-cols-2 md:gap-12 md:py-20">
+        <section className="mx-auto grid max-w-6xl items-center gap-8 px-5 py-10 sm:px-6 md:grid-cols-2 md:gap-12 md:py-20">
           <div>
-            <h1 className={cn("text-5xl font-semibold tracking-tight text-slate-800 md:text-6xl", "font-[family-name:var(--font-lobster)]")}>
+            <h1 className={cn("text-4xl font-semibold tracking-tight text-slate-800 sm:text-5xl md:text-6xl", "font-[family-name:var(--font-lobster)]")}>
               Keep Swimmin&apos;
             </h1>
             <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-700 md:text-3xl">

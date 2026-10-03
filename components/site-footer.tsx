@@ -6,7 +6,7 @@ export function SiteFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="bg-transparent backdrop-blur-[2px]">
+    <footer className="bg-transparent pb-20 backdrop-blur-[2px] md:pb-0">
       <div className="mx-auto max-w-4xl px-6 py-6">
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
@@ -19,15 +19,15 @@ export function SiteFooter() {
             />
             <span>Keep Swimmin&apos;</span>
           </div>
-          <nav className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-600">
-            <Link href="/support" className="transition-colors hover:text-sky-600">
+          <nav className="flex flex-wrap items-center justify-center gap-1 text-sm text-slate-600 sm:gap-2">
+            <Link href="/support" className="rounded-full px-3 py-2 transition-colors hover:text-sky-600">
               Support
             </Link>
-            <Link href="/terms" className="transition-colors hover:text-sky-600">
-              Terms of Service
+            <Link href="/terms" className="rounded-full px-3 py-2 transition-colors hover:text-sky-600">
+              Terms
             </Link>
-            <Link href="/privacy" className="transition-colors hover:text-sky-600">
-              Privacy Policy
+            <Link href="/privacy" className="rounded-full px-3 py-2 transition-colors hover:text-sky-600">
+              Privacy
             </Link>
           </nav>
         </div>

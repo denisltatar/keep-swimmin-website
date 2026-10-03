@@ -40,7 +40,8 @@ export function FaqSection() {
               <button
                 type="button"
                 onClick={() => setOpen(isOpen ? null : i)}
-                className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-slate-800 transition-colors hover:bg-white/80 md:px-6 md:py-5"
+                aria-expanded={isOpen}
+                className="flex min-h-12 w-full touch-manipulation items-center justify-between gap-4 px-5 py-4 text-left text-slate-800 transition-colors hover:bg-white/80 md:px-6 md:py-5"
               >
                 <span className="font-semibold">{item.q}</span>
                 <ChevronDown

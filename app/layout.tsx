@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Lobster } from "next/font/google";
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import "./globals.css";
+import { MobileDownloadBar } from "@/components/mobile-download-bar";
 import { SiteFooter } from "@/components/site-footer";
 import { publicAsset } from "@/lib/base-path";
 
@@ -17,6 +18,13 @@ const lobster = Lobster({
   variable: "--font-lobster",
   display: "swap",
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#f0f9ff",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://keep-swimmin-app-website.vercel.app"),
@@ -67,6 +75,7 @@ export default function RootLayout({
       <body className={`${GeistSans.className} flex min-h-screen flex-col text-slate-800`}>
         <div className="flex flex-1 flex-col bg-gradient-to-b from-sky-50 to-blue-50">{children}</div>
         <SiteFooter />
+        <MobileDownloadBar />
       </body>
     </html>
   );
